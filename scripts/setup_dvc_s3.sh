@@ -6,6 +6,11 @@ if [[ -z "${DVC_S3_BUCKET:-}" || -z "${AWS_REGION:-}" ]]; then
   exit 1
 fi
 
+if [[ "${DVC_S3_BUCKET}" == *"<"* || "${DVC_S3_BUCKET}" == *">"* ]]; then
+  echo "DVC_S3_BUCKET looks like placeholder text: ${DVC_S3_BUCKET}"
+  exit 1
+fi
+
 if ! command -v dvc >/dev/null 2>&1; then
   echo "dvc is not installed in the active environment."
   exit 1

@@ -25,6 +25,7 @@ mlruns/
 
 # DVC
 .dvc/cache/
+.dvc/site-cache/
 
 # macOS
 .DS_Store
@@ -34,3 +35,7 @@ mlruns/
 
 # Jupyter
 .ipynb_checkpoints/
+
+# Local infra outputs/keys
+infra/aws_outputs.env
+infra/keys/

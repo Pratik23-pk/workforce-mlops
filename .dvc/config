@@ -2,5 +2,5 @@
     site_cache_dir = .dvc/site-cache
     remote = origin
 ['remote "origin"']
-    url = s3://<mlflow-bucket-686>/dvc
+    url = s3://workforce-mlops-dvc-357457230342/dvc
     region = us-east-1

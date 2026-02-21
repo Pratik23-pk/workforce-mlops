@@ -5,11 +5,13 @@ After=network.target
 [Service]
 Type=simple
 User=ubuntu
-WorkingDirectory=/home/ubuntu
+WorkingDirectory=/home/ubuntu/workforce-mlops
+Environment=HOME=/home/ubuntu
 Environment=MLFLOW_ARTIFACT_ROOT=s3://CHANGE_ME_BUCKET/mlflow-artifacts
-Environment=MLFLOW_BACKEND_STORE_URI=sqlite:///mlflow.db
+Environment=MLFLOW_BACKEND_STORE_URI=sqlite:////home/ubuntu/mlflow/mlflow.db
 Environment=MLFLOW_HOST=0.0.0.0
 Environment=MLFLOW_PORT=5000
+Environment=MLFLOW_BIN=/home/ubuntu/.venvs/mlflow/bin/mlflow
 ExecStart=/bin/bash -lc '/home/ubuntu/workforce-mlops/scripts/start_mlflow_server.sh'
 Restart=on-failure
 RestartSec=5

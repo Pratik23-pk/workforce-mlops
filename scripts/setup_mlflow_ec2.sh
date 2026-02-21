@@ -12,6 +12,9 @@ EC2_KEY_PATH="${EC2_KEY_PATH:-}"
 MLFLOW_S3_BUCKET="${MLFLOW_S3_BUCKET:-}"
 AWS_REGION="${AWS_REGION:-us-east-1}"
 REMOTE_PROJECT_DIR="${REMOTE_PROJECT_DIR:-/home/${EC2_USER}/workforce-mlops}"
+REMOTE_MLFLOW_VENV="${REMOTE_MLFLOW_VENV:-/home/${EC2_USER}/.venvs/mlflow}"
+REMOTE_MLFLOW_HOME="${REMOTE_MLFLOW_HOME:-/home/${EC2_USER}/mlflow}"
+MLFLOW_VERSION="${MLFLOW_VERSION:-2.17.2}"
 
 if [[ -z "$EC2_HOST" || -z "$EC2_KEY_PATH" || -z "$MLFLOW_S3_BUCKET" ]]; then
   echo "Required: EC2_HOST/EC2_PUBLIC_IP, EC2_KEY_PATH, MLFLOW_S3_BUCKET"
@@ -42,20 +45,31 @@ ssh "${SSH_OPTS[@]}" "${EC2_USER}@${EC2_HOST}" <<EOF_REMOTE
 set -euo pipefail
 
 sudo apt-get update
-sudo apt-get install -y python3 python3-pip
-sudo python3 -m pip install --upgrade pip
-sudo python3 -m pip install mlflow boto3
+sudo apt-get install -y python3 python3-pip python3-venv
+mkdir -p ${REMOTE_MLFLOW_HOME}
+rm -rf ${REMOTE_MLFLOW_VENV}
+python3 -m venv ${REMOTE_MLFLOW_VENV}
+${REMOTE_MLFLOW_VENV}/bin/python -m pip install --upgrade pip
+${REMOTE_MLFLOW_VENV}/bin/pip install "mlflow==${MLFLOW_VERSION}" boto3
+${REMOTE_MLFLOW_VENV}/bin/mlflow --version
 
 chmod +x ${REMOTE_PROJECT_DIR}/scripts/start_mlflow_server.sh
-sed -i "s|s3://CHANGE_ME_BUCKET/mlflow-artifacts|s3://${MLFLOW_S3_BUCKET}/mlflow-artifacts|g" ${REMOTE_PROJECT_DIR}/infra/mlflow.service
+sed -i "s|^Environment=MLFLOW_ARTIFACT_ROOT=.*|Environment=MLFLOW_ARTIFACT_ROOT=s3://${MLFLOW_S3_BUCKET}/mlflow-artifacts|g" ${REMOTE_PROJECT_DIR}/infra/mlflow.service
+sed -i "s|^Environment=MLFLOW_BACKEND_STORE_URI=.*|Environment=MLFLOW_BACKEND_STORE_URI=sqlite:////home/${EC2_USER}/mlflow/mlflow.db|g" ${REMOTE_PROJECT_DIR}/infra/mlflow.service
+sed -i "s|^Environment=MLFLOW_BIN=.*|Environment=MLFLOW_BIN=${REMOTE_MLFLOW_VENV}/bin/mlflow|g" ${REMOTE_PROJECT_DIR}/infra/mlflow.service
 
 sudo cp ${REMOTE_PROJECT_DIR}/infra/mlflow.service /etc/systemd/system/mlflow.service
 sudo systemctl daemon-reload
 sudo systemctl enable mlflow
 sudo systemctl restart mlflow
-sudo systemctl --no-pager --full status mlflow | sed -n '1,25p'
+sleep 3
+sudo systemctl --no-pager --full status mlflow | sed -n '1,40p'
 
-curl -fsS http://127.0.0.1:5000 >/dev/null
+if ! curl -fsS http://127.0.0.1:5000 >/dev/null; then
+  echo "MLflow failed health check. Recent logs:"
+  sudo journalctl -u mlflow -n 80 --no-pager
+  exit 1
+fi
 EOF_REMOTE
 
 echo "MLflow is running: http://${EC2_HOST}:5000"

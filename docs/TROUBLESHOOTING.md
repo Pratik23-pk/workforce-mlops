@@ -103,3 +103,24 @@ dvc push -v -j 1
 ## Training warning: `RuntimeWarning: overflow encountered in exp`
 
 Status: already handled in training code by clipping logits before sigmoid probability conversion.
+
+## MLflow service error: `sqlite3.OperationalError: unable to open database file` (huey stack trace)
+
+Cause: EC2 MLflow was installed as unpinned latest version and/or used relative sqlite paths.  
+Fix in this repo now pins `mlflow==2.17.2` and uses absolute backend sqlite path.
+
+Run:
+
+```bash
+cd /Users/pratikkanjilal/Documents/workforce-mlops
+source .venv/bin/activate
+source infra/aws_outputs.env
+bash scripts/setup_mlflow_ec2.sh
+```
+
+Verify on EC2:
+
+```bash
+ssh -i "$EC2_KEY_PATH" ubuntu@"$EC2_PUBLIC_IP" "sudo systemctl status mlflow --no-pager"
+ssh -i "$EC2_KEY_PATH" ubuntu@"$EC2_PUBLIC_IP" "curl -I http://127.0.0.1:5000"
+```

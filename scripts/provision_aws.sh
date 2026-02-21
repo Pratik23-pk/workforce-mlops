@@ -29,6 +29,26 @@ require_cmd() {
   fi
 }
 
+validate_bucket_name() {
+  local bucket="$1"
+  if [[ "$bucket" == *"<"* || "$bucket" == *">"* ]]; then
+    echo "Invalid S3 bucket name '$bucket' (looks like placeholder text)."
+    echo "Use a real lowercase name, e.g. workforce-mlops-dvc-123456789012"
+    exit 1
+  fi
+
+  if [[ ! "$bucket" =~ ^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$ ]]; then
+    echo "Invalid S3 bucket name '$bucket'."
+    echo "Allowed pattern: lowercase letters/numbers/dots/hyphens, length 3-63."
+    exit 1
+  fi
+
+  if [[ "$bucket" == *".."* || "$bucket" == *".-"* || "$bucket" == *"-."* ]]; then
+    echo "Invalid S3 bucket name '$bucket' (contains invalid dot/hyphen sequence)."
+    exit 1
+  fi
+}
+
 ensure_bucket() {
   local bucket="$1"
   if aws s3api head-bucket --bucket "$bucket" >/dev/null 2>&1; then
@@ -74,6 +94,14 @@ DVC_S3_BUCKET="${DVC_S3_BUCKET:-${PROJECT_NAME}-dvc-${ACCOUNT_ID}}"
 MLFLOW_S3_BUCKET="${MLFLOW_S3_BUCKET:-${PROJECT_NAME}-mlflow-${ACCOUNT_ID}}"
 ECR_REGISTRY="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
 KEY_PATH="${KEY_DIR}/${KEY_NAME}.pem"
+
+if [[ "$GITHUB_REPO" == "*/*" || "$GITHUB_REPO" == *"<"* || "$GITHUB_REPO" == *">"* ]]; then
+  echo "Set GITHUB_REPO to your real repo slug, e.g. Pratik23-pk/workforce-mlops"
+  exit 1
+fi
+
+validate_bucket_name "$DVC_S3_BUCKET"
+validate_bucket_name "$MLFLOW_S3_BUCKET"
 
 mkdir -p "$KEY_DIR" infra
 
