@@ -66,8 +66,9 @@ if ! command -v docker >/dev/null 2>&1; then
 fi
 
 aws ecr get-login-password --region "$AWS_REGION" | sudo docker login --username AWS --password-stdin "$ECR_REGISTRY"
-sudo docker pull "$IMAGE_URI"
 sudo docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
+sudo docker system prune -af >/dev/null 2>&1 || true
+sudo docker pull "$IMAGE_URI"
 sudo docker run -d --name "$CONTAINER_NAME" -p 80:8501 "$IMAGE_URI"
 EOF_REMOTE
 

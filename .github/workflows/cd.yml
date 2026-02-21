@@ -52,6 +52,7 @@ jobs:
               sudo systemctl start docker
             fi
             aws ecr get-login-password --region "$AWS_REGION" | sudo docker login --username AWS --password-stdin "$(echo "$IMAGE_URI" | cut -d'/' -f1)"
-            sudo docker pull "$IMAGE_URI"
             sudo docker rm -f workforce-mlops-app || true
+            sudo docker system prune -af || true
+            sudo docker pull "$IMAGE_URI"
             sudo docker run -d --name workforce-mlops-app -p 80:8501 "$IMAGE_URI"

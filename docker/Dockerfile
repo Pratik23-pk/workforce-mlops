@@ -6,7 +6,10 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir --upgrade pip && pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --upgrade pip \
+    && grep -v '^torch==' requirements.txt > requirements.no_torch.txt \
+    && pip install --no-cache-dir -r requirements.no_torch.txt \
+    && pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu torch==2.5.1
 
 COPY . .
 ENV PYTHONPATH=/app/src
