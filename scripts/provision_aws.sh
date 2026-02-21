@@ -317,6 +317,29 @@ aws iam attach-role-policy --role-name "$GITHUB_ROLE_NAME" --policy-arn arn:aws:
 
 AWS_ROLE_TO_ASSUME="arn:aws:iam::${ACCOUNT_ID}:role/${GITHUB_ROLE_NAME}"
 
+GITHUB_DVC_POLICY_DOC="$(mktemp)"
+cat > "$GITHUB_DVC_POLICY_DOC" <<JSON
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": ["s3:ListBucket"],
+      "Resource": ["arn:aws:s3:::${DVC_S3_BUCKET}"]
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["s3:GetObject"],
+      "Resource": ["arn:aws:s3:::${DVC_S3_BUCKET}/*"]
+    }
+  ]
+}
+JSON
+aws iam put-role-policy \
+  --role-name "$GITHUB_ROLE_NAME" \
+  --policy-name "${PROJECT_NAME}-github-dvc-read" \
+  --policy-document "file://${GITHUB_DVC_POLICY_DOC}" >/dev/null
+
 # 9) Write outputs
 cat > "$OUTPUT_FILE" <<ENV
 AWS_REGION=${AWS_REGION}

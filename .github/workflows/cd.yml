@@ -30,8 +30,11 @@ jobs:
       - name: Pull DVC artifacts
         run: |
           python -m pip install --upgrade pip
-          pip install "dvc[s3]==3.58.0"
-          dvc pull -j 1
+          pip install "dvc[s3]==3.58.0" "pathspec==0.12.1"
+          aws sts get-caller-identity
+          dvc version
+          dvc remote list
+          dvc pull -v -j 1
 
       - name: Login to ECR
         id: ecr
