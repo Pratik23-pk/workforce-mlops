@@ -1,0 +1,31 @@
+targets:
+  layoff_risk_threshold: 0.08
+
+features:
+  categorical:
+    - company
+    - confidence_level
+  numerical:
+    - year
+    - employees_start
+    - revenue_billions_usd
+    - stock_price_change_pct
+    - gdp_growth_us_pct
+    - unemployment_rate_us_pct
+    - is_estimated
+    - data_quality_score
+
+training:
+  seed: 42
+  epochs: 75
+  batch_size: 32
+  lr: 0.001
+  weight_decay: 0.0001
+  hidden_dims: [128, 64]
+  dropout: 0.2
+  early_stopping_patience: 10
+  loss_weights:
+    hiring: 1.0
+    layoffs: 1.0
+    layoff_risk: 1.0
+    workforce_volatility: 1.0

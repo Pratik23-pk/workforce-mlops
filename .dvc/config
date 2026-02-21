@@ -1,0 +1,6 @@
+[core]
+    site_cache_dir = .dvc/site-cache
+    remote = origin
+['remote "origin"']
+    url = s3://<mlflow-bucket-686>/dvc
+    region = us-east-1

@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual env
+.venv/
+venv/
+
+# Secrets
+.env
+
+# Local MLflow
+mlruns/
+
+# Data and artifacts
+/data/raw/*.csv
+/data/interim/
+/data/processed/
+/artifacts/
+/models/
+
+# DVC
+.dvc/cache/
+
+# macOS
+.DS_Store
+
+# Streamlit
+.streamlit/
+
+# Jupyter
+.ipynb_checkpoints/

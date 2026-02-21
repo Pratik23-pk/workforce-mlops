@@ -1,0 +1,144 @@
+schema: '2.0'
+stages:
+  ingest:
+    cmd: PYTHONPATH=src python -m workforce_mlops.data.ingest --input 
+      data/raw/workforce.csv --output data/interim/workforce_clean.csv
+    deps:
+    - path: data/raw/workforce.csv
+      hash: md5
+      md5: f0fa46568e5a62da29fb9a00cda96698
+      size: 42453
+    - path: src/workforce_mlops/data/ingest.py
+      hash: md5
+      md5: 08b5492164a7b181260c17953858a34c
+      size: 783
+    outs:
+    - path: data/interim/workforce_clean.csv
+      hash: md5
+      md5: 43230061d8f96162624cfd12bab030d4
+      size: 41920
+  validate:
+    cmd: PYTHONPATH=src python -m workforce_mlops.data.validate --input 
+      data/interim/workforce_clean.csv --report reports/validation_report.json
+    deps:
+    - path: data/interim/workforce_clean.csv
+      hash: md5
+      md5: 43230061d8f96162624cfd12bab030d4
+      size: 41920
+    - path: src/workforce_mlops/data/validate.py
+      hash: md5
+      md5: 5cc42512f774efcc0e908cc51eb4e9e3
+      size: 1287
+    outs:
+    - path: reports/validation_report.json
+      hash: md5
+      md5: 73bedcfa83682b60dae2b554d93c1673
+      size: 502
+  preprocess:
+    cmd: PYTHONPATH=src python -m workforce_mlops.data.preprocess --input 
+      data/interim/workforce_clean.csv --train-output data/processed/train.csv 
+      --val-output data/processed/val.csv --test-output data/processed/test.csv 
+      --params params.yaml
+    deps:
+    - path: data/interim/workforce_clean.csv
+      hash: md5
+      md5: 43230061d8f96162624cfd12bab030d4
+      size: 41920
+    - path: params.yaml
+      hash: md5
+      md5: 2b229bc7bc2cfd2740767e88d553d959
+      size: 560
+    - path: src/workforce_mlops/data/preprocess.py
+      hash: md5
+      md5: e20e569b3f9a932f86c86055dd68dcf7
+      size: 2967
+    outs:
+    - path: data/processed/test.csv
+      hash: md5
+      md5: f01a625a765061389bef61b0604699bd
+      size: 2235
+    - path: data/processed/train.csv
+      hash: md5
+      md5: 78840d39219377adc2f1666c13357aa9
+      size: 37732
+    - path: data/processed/val.csv
+      hash: md5
+      md5: 4bcf02dacaa7b6334cce3b04fe76d77c
+      size: 2304
+  train:
+    cmd: OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=src python -m 
+      workforce_mlops.models.train --train-path data/processed/train.csv 
+      --val-path data/processed/val.csv --output-dir artifacts/model --params 
+      params.yaml
+    deps:
+    - path: data/processed/train.csv
+      hash: md5
+      md5: 78840d39219377adc2f1666c13357aa9
+      size: 37732
+    - path: data/processed/val.csv
+      hash: md5
+      md5: 4bcf02dacaa7b6334cce3b04fe76d77c
+      size: 2304
+    - path: params.yaml
+      hash: md5
+      md5: 2b229bc7bc2cfd2740767e88d553d959
+      size: 560
+    - path: src/workforce_mlops/models/multitask_model.py
+      hash: md5
+      md5: 69b7b82c2875ef601a2e1fbfe7c234d6
+      size: 1223
+    - path: src/workforce_mlops/models/train.py
+      hash: md5
+      md5: 1fb6cce2a0e85ec64e9acc94d6e0517b
+      size: 9381
+    outs:
+    - path: artifacts/model/metadata.json
+      hash: md5
+      md5: d4fc0b04e366e707a4ea29d2008f3edd
+      size: 766
+    - path: artifacts/model/model.pt
+      hash: md5
+      md5: 73e4bcf5f60ffe849c56925327badba6
+      size: 56402
+    - path: artifacts/model/preprocessor.joblib
+      hash: md5
+      md5: 1d8dc4bbad8f600868fe62011c1e0043
+      size: 4047
+    - path: reports/val_metrics.json
+      hash: md5
+      md5: 88bd2fee8730b9833b29e25495f86bba
+      size: 276
+  evaluate:
+    cmd: PYTHONPATH=src python -m workforce_mlops.models.evaluate --test-path 
+      data/processed/test.csv --artifact-dir artifacts/model --report-path 
+      reports/test_metrics.json
+    deps:
+    - path: artifacts/model/metadata.json
+      hash: md5
+      md5: d4fc0b04e366e707a4ea29d2008f3edd
+      size: 766
+    - path: artifacts/model/model.pt
+      hash: md5
+      md5: 73e4bcf5f60ffe849c56925327badba6
+      size: 56402
+    - path: artifacts/model/preprocessor.joblib
+      hash: md5
+      md5: 1d8dc4bbad8f600868fe62011c1e0043
+      size: 4047
+    - path: data/processed/test.csv
+      hash: md5
+      md5: f01a625a765061389bef61b0604699bd
+      size: 2235
+    - path: src/workforce_mlops/models/evaluate.py
+      hash: md5
+      md5: d43f455ddf1ee2d6dad00793a50aeced
+      size: 2375
+    - path: src/workforce_mlops/models/predict.py
+      hash: md5
+      md5: 55c310b4c8eee5da35e7059ff06aefc8
+      size: 2202
+    outs:
+    - path: reports/test_metrics.json
+      hash: md5
+      md5: 8f0bba6b18a869e9ddfe34d23e9bce04
+      size: 279
