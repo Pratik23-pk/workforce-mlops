@@ -1,169 +1,187 @@
-# Workforce MLOps (Multi-Task DNN)
+# Workforce Intelligence MLOps
 
-End-to-end MLOps project for predicting workforce outcomes with one shared deep neural network and four output heads:
+[![CI](https://github.com/Pratik23-pk/workforce-mlops/actions/workflows/ci.yml/badge.svg)](https://github.com/Pratik23-pk/workforce-mlops/actions/workflows/ci.yml)
+[![CD](https://github.com/Pratik23-pk/workforce-mlops/actions/workflows/cd.yml/badge.svg)](https://github.com/Pratik23-pk/workforce-mlops/actions/workflows/cd.yml)
 
-- Hiring (`new_hires`) - regression
-- Layoffs (`layoffs`) - regression
-- Layoff risk (`layoff_risk`) - binary classification
-- Workforce volatility (`workforce_volatility`) - regression
+Production-ready workforce forecasting platform with a modular FastAPI app, multi-head deep learning, and full MLOps automation (DVC + MLflow + CI/CD + GitOps).
 
-## Project layout
+## What This Project Predicts
+
+Single shared neural representation with 4 output heads:
+
+1. Hiring (`regression`)
+2. Layoffs (`regression`)
+3. Layoff Risk (`binary classification`)
+4. Workforce Volatility (`regression`)
+
+## Tech Stack
+
+- Backend/API: `FastAPI`, `Uvicorn`
+- Model stack: `PyTorch`, `scikit-learn`
+- Experiment tracking: `MLflow`
+- Data/model versioning: `DVC` (S3 remote)
+- Orchestration: `DVC pipeline` (`dvc.yaml`)
+- CI: `GitHub Actions`
+- CD/GitOps: `GitHub Actions + Argo CD + Kubernetes`
+- Packaging/runtime: `Docker`
+
+## System Architecture
+
+```mermaid
+flowchart LR
+    A[Raw Workforce CSV] --> B[DVC Pipeline]
+    B --> C[Compare 3 Models]
+    C --> D[Auto Promotion]
+    D --> E[Production Artifacts]
+    E --> F[FastAPI Inference Service]
+    F --> G[Web UI]
+
+    H[MLflow Tracking] --- B
+    H --- C
+    H --- D
+
+    I[GitHub Actions CI] --> J[GitHub Actions CD]
+    J --> K[Docker Image + K8s Manifests]
+    K --> L[Argo CD Sync]
+    L --> M[Kubernetes Runtime]
+```
+
+## Repository Layout
 
 ```text
 workforce-mlops/
-├── app/                         # Streamlit app
-├── artifacts/                   # Trained model + preprocessor bundle
-├── data/
-│   ├── raw/
-│   ├── interim/
-│   └── processed/
-├── docker/
-├── infra/
-├── reports/
-├── scripts/
+├── .github/workflows/          # CI/CD pipelines
+├── deploy/                     # Kubernetes + Argo CD manifests
+├── docker/                     # Dockerfile + runtime entrypoint
+├── docs/                       # deployment and ops playbooks
+├── experiments/                # notebook experiments (ignored in git)
+├── scripts/                    # bootstrap/provision/deploy helpers
 ├── src/workforce_mlops/
-│   ├── data/
-│   └── models/
+│   ├── api/                    # FastAPI app + frontend assets
+│   ├── data/                   # ingest/validate/preprocess
+│   └── models/                 # train/compare/promote/evaluate/predict
 ├── tests/
 ├── dvc.yaml
 ├── params.yaml
-└── .github/workflows/
+└── requirements.txt
 ```
 
-## Quickstart (macOS)
+## Quick Start (Local)
 
 ```bash
-cd /Users/pratikkanjilal/Documents/workforce-mlops
-bash scripts/bootstrap_macos.sh
+cd workforce-mlops
+bash scripts/bootstrap.sh
 bash scripts/create_venv.sh
 source .venv/bin/activate
-pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-Place your dataset at:
+Windows (PowerShell):
+
+```powershell
+Set-Location workforce-mlops
+powershell -ExecutionPolicy Bypass -File .\scripts\create_venv.ps1
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+```
+
+## Data + Training Pipeline
+
+Place dataset at:
 
 ```text
 data/raw/workforce.csv
 ```
 
-## Local run
+Run full reproducible pipeline:
 
 ```bash
 export PYTHONPATH=src
-python -m workforce_mlops.data.ingest \
-  --input data/raw/workforce.csv \
-  --output data/interim/workforce_clean.csv
-
-python -m workforce_mlops.data.validate \
-  --input data/interim/workforce_clean.csv \
-  --report reports/validation_report.json
-
-python -m workforce_mlops.data.preprocess \
-  --input data/interim/workforce_clean.csv \
-  --train-output data/processed/train.csv \
-  --val-output data/processed/val.csv \
-  --test-output data/processed/test.csv \
-  --params params.yaml
-
-python -m workforce_mlops.models.train \
-  --train-path data/processed/train.csv \
-  --val-path data/processed/val.csv \
-  --output-dir artifacts/model \
-  --params params.yaml
-
-python -m workforce_mlops.models.evaluate \
-  --test-path data/processed/test.csv \
-  --artifact-dir artifacts/model \
-  --report-path reports/test_metrics.json
-
-streamlit run app/streamlit_app.py
-```
-
-## AWS MLOps Setup
-### Prerequisites (interactive)
-
-```bash
-brew install awscli
-aws configure
-gh auth login
-```
-
-### One-time AWS provisioning
-
-```bash
-export AWS_REGION="us-east-1"
-export GITHUB_REPO="<owner>/workforce-mlops"
-bash scripts/provision_aws.sh
-source infra/aws_outputs.env
-```
-
-### DVC remote on S3
-
-```bash
-bash scripts/setup_dvc_s3.sh
 dvc repro
-dvc push -v -j 1
 ```
 
-### MLflow on EC2
+Run automated compare/promote/evaluate cycle:
 
 ```bash
-export EC2_HOST="$EC2_PUBLIC_IP"
-bash scripts/setup_mlflow_ec2.sh
-
-export MLFLOW_TRACKING_URI="http://$EC2_PUBLIC_IP:5000"
-source scripts/setup_mlflow_aws.sh
+make ct-auto
 ```
 
-### Build, push, and deploy Streamlit app
+## Run Application
 
 ```bash
-bash scripts/build_push_and_deploy.sh
+export PYTHONPATH=src
+make app-dev
 ```
 
-### GitHub repository and CI/CD
+Open:
 
-```bash
-bash scripts/bootstrap_github_repo.sh
+- App: `http://localhost:8000`
+- API docs: `http://localhost:8000/docs`
 
-export AWS_ROLE_TO_ASSUME="$AWS_ROLE_TO_ASSUME"
-export AWS_REGION="$AWS_REGION"
-export ECR_REPOSITORY="$ECR_REPOSITORY"
-export EC2_HOST="$EC2_PUBLIC_IP"
-export EC2_USER="ubuntu"
-export EC2_SSH_KEY_PATH="$EC2_KEY_PATH"
-export DVC_S3_BUCKET="$DVC_S3_BUCKET"
-export MLFLOW_TRACKING_URI="http://$EC2_PUBLIC_IP:5000"
-bash scripts/set_github_secrets.sh
+## Experimentation (Notebook)
+
+Notebook:
+
+```text
+experiments/model_comparison_experiment.ipynb
 ```
 
-## CI/CD
+Covers:
 
-- `ci.yml`: lint + tests on PR/push.
-- `cd.yml`: build/push Docker image and deploy to EC2 on `main`.
+- data overview (`head`, `tail`, summary)
+- EDA + visualizations
+- preprocessing and target engineering
+- three neural models (`baseline_mlp`, `wide_deep_mlp`, `residual_mlp`)
+- model comparison + evaluation
+- MLflow logging
 
-Add required GitHub secrets before enabling CD:
+## Model Lifecycle Automation
+
+Pipeline stages in `dvc.yaml`:
+
+1. `ingest`
+2. `validate`
+3. `preprocess`
+4. `train`
+5. `compare_models`
+6. `promote_model`
+7. `evaluate`
+
+Promotion policy is automatic and configurable in `params.yaml`.
+
+## MLOps Components Included
+
+- DVC stage DAG + reproducibility
+- S3-backed DVC remote for artifacts/data
+- MLflow logging in training/compare/promote/evaluate
+- CI quality gates (`ruff`, `pytest`)
+- CD pipeline for model sync + image build + manifest update
+- Argo CD-based GitOps delivery
+
+## Auto Cloud Connect (AWS/GCP/Azure)
+
+Container startup bootstrap (`docker/entrypoint.sh` + `scripts/auto_cloud_connect.sh`) can:
+
+- detect cloud provider
+- configure DVC remote automatically
+- optionally run `dvc pull`
+- configure MLflow URI from provider-specific env vars
+
+Identity-first design only (IAM role / Workload Identity / Managed Identity). No static credentials in code.
+
+See:
+
+- `docs/CLOUD_AUTO_CONNECT.md`
+
+## Deployment Guides
+
+- AWS CLI + Console dual playbook: `docs/AWS_DEPLOY_PLAYBOOK.md`
+- Argo CD setup: `docs/ARGOCD_GITOPS_SETUP.md`
+- Troubleshooting: `docs/TROUBLESHOOTING.md`
+
+## Required GitHub Secrets (for CD)
 
 - `AWS_ROLE_TO_ASSUME`
 - `AWS_REGION`
 - `ECR_REPOSITORY`
-- `EC2_HOST`
-- `EC2_USER`
-- `EC2_SSH_KEY`
-
-Optional secrets:
-
-- `MLFLOW_TRACKING_URI`
 - `DVC_S3_BUCKET`
-
-## Notes for first project
-
-- Keep the first model small (dataset is only 532 rows).
-- Prioritize reproducibility and traceability over model complexity.
-- Add model/data drift monitoring after baseline deployment is stable.
-
-## Troubleshooting
-
-- See `/Users/pratikkanjilal/Documents/workforce-mlops/docs/TROUBLESHOOTING.md`
-- AWS + GitHub CI/CD: `/Users/pratikkanjilal/Documents/workforce-mlops/docs/AWS_GITHUB_SETUP.md`

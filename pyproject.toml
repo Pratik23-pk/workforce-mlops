@@ -8,6 +8,12 @@ version = "0.1.0"
 description = "End-to-end MLOps multi-task workforce prediction"
 requires-python = ">=3.11,<3.13"
 
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]

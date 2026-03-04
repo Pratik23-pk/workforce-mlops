@@ -1,5 +1,15 @@
 from __future__ import annotations
 
+import os
+
+import pytest
+
+if os.getenv("RUN_TORCH_TESTS", "0") != "1":
+    pytest.skip(
+        "Skipping torch runtime tests. Set RUN_TORCH_TESTS=1 to enable.",
+        allow_module_level=True,
+    )
+
 import torch
 
 from workforce_mlops.models.multitask_model import MultiTaskNet

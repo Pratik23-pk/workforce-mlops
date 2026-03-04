@@ -24,13 +24,17 @@ jobs:
 
       - name: Lint
         run: |
-          PYTHONPATH=src ruff check src tests app
+          PYTHONPATH=src ruff check src tests
 
       - name: Test
+        env:
+          RUN_TORCH_TESTS: "1"
         run: |
           PYTHONPATH=src pytest -q
 
       - name: Pipeline smoke command check
         run: |
           PYTHONPATH=src python -m workforce_mlops.models.train --help
+          PYTHONPATH=src python -m workforce_mlops.models.compare_models --help
+          PYTHONPATH=src python -m workforce_mlops.models.promote_model --help
           PYTHONPATH=src python -m workforce_mlops.models.evaluate --help

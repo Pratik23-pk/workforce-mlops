@@ -1,3 +1,14 @@
-# Add patterns of files dvc should ignore, which could improve
-# the performance. Learn more at
+# DVC traversal ignore list (performance + noise reduction)
 # https://dvc.org/doc/user-guide/dvcignore
+
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+mlruns/
+
+# Local IDE/system files
+.DS_Store
+.vscode/
+.idea/

@@ -1,0 +1,10 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: workforce-mlops
+resources:
+  - namespace.yaml
+  - ../../base
+images:
+  - name: workforce-mlops-app
+    newName: 357457230342.dkr.ecr.us-east-1.amazonaws.com/workforce-mlops-app
+    newTag: latest

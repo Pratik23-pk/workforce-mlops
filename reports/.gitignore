@@ -1,3 +1,6 @@
 /validation_report.json
 /val_metrics.json
 /test_metrics.json
+/model_comparison.csv
+/model_comparison_summary.json
+/model_promotion.json

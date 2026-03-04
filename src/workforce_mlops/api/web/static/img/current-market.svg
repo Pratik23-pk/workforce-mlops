@@ -1,0 +1,29 @@
+<svg width="480" height="300" viewBox="0 0 480 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Current market">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#11224e"/>
+      <stop offset="1" stop-color="#1f0f3d"/>
+    </linearGradient>
+    <linearGradient id="up" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#2e7bff"/>
+      <stop offset="1" stop-color="#00d2ff"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="480" height="300" rx="24" fill="url(#bg)"/>
+  <g opacity="0.3" stroke="#c9dcff" stroke-width="1">
+    <line x1="30" y1="60" x2="450" y2="60"/>
+    <line x1="30" y1="120" x2="450" y2="120"/>
+    <line x1="30" y1="180" x2="450" y2="180"/>
+    <line x1="30" y1="240" x2="450" y2="240"/>
+  </g>
+  <g fill="url(#up)">
+    <rect x="64" y="190" width="46" height="60" rx="8"/>
+    <rect x="130" y="165" width="46" height="85" rx="8"/>
+    <rect x="196" y="145" width="46" height="105" rx="8"/>
+    <rect x="262" y="120" width="46" height="130" rx="8"/>
+    <rect x="328" y="102" width="46" height="148" rx="8"/>
+  </g>
+  <path d="M62 150 C130 130, 175 112, 230 95 C292 75, 347 68, 420 52" fill="none" stroke="#7bff7b" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="420" cy="52" r="8" fill="#7bff7b"/>
+  <text x="34" y="42" fill="#e8f2ff" font-size="22" font-family="Arial, sans-serif" font-weight="700">Current Hiring Momentum</text>
+</svg>

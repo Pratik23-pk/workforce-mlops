@@ -1,41 +1,55 @@
 # Python
 __pycache__/
 *.py[cod]
+*.pyo
+*.pyd
 *.egg-info/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
 
-# Virtual env
+# Virtual environments
 .venv/
 venv/
 
-# Secrets
+# Local environment and secrets
 .env
+.env.*
+!.env.example
+
+# Logs and temp
+*.tmp
 
 # Local MLflow
 mlruns/
 
-# Data and artifacts
+# Data and artifacts (managed by DVC, not Git)
 /data/raw/*.csv
 /data/interim/
 /data/processed/
 /artifacts/
-/models/
+/reports/*.json
+/reports/*.csv
 
-# DVC
+# DVC internal caches
 .dvc/cache/
 .dvc/site-cache/
 
-# macOS
+# OS/editor noise
 .DS_Store
-
-# Streamlit
-.streamlit/
+.vscode/
+.idea/
 
 # Jupyter
 .ipynb_checkpoints/
+experiments/
+experiments/*.ipynb
+experiments/.ipynb_checkpoints/
 
 # Local infra outputs/keys
 infra/aws_outputs.env
+infra/aws_gitops_outputs.env
 infra/keys/

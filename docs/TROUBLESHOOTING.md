@@ -1,126 +1,179 @@
 # Troubleshooting
 
-## DVC error: `cannot import name '_DIR_MARK' from pathspec.patterns.gitwildmatch`
+Use `<repo-root>` as your local project directory.
 
-Cause: incompatible `pathspec` major version.
+Activate environment first:
+
+- macOS/Linux:
+
+```bash
+cd <repo-root>
+source .venv/bin/activate
+```
+
+- Windows PowerShell:
+
+```powershell
+Set-Location <repo-root>
+.\.venv\Scripts\Activate.ps1
+```
+
+## `ModuleNotFoundError: No module named 'workforce_mlops'`
+
+Cause: `src/` package path is not available in current shell/notebook kernel.
 
 Fix:
 
 ```bash
-cd /Users/pratikkanjilal/Documents/workforce-mlops
+cd <repo-root>
+source .venv/bin/activate
+export PYTHONPATH=src
+pip install -e .
+```
+
+PowerShell equivalent:
+
+```powershell
+Set-Location <repo-root>
+.\.venv\Scripts\Activate.ps1
+$env:PYTHONPATH="src"
+pip install -e .
+```
+
+In VS Code notebook, select kernel from this project `.venv`.
+
+## `ModuleNotFoundError: No module named 'seaborn'` or `mlflow`
+
+Cause: missing dependencies in the active environment.
+
+Fix:
+
+```bash
+cd <repo-root>
+source .venv/bin/activate
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+## DVC error: `cannot import name '_DIR_MARK' from pathspec.patterns.gitwildmatch`
+
+Cause: incompatible `pathspec` version.
+
+Fix:
+
+```bash
+cd <repo-root>
 source .venv/bin/activate
 pip uninstall -y pathspec
 pip install pathspec==0.12.1
 pip install -r requirements.txt
 ```
 
-Verify:
-
-```bash
-python -c "import pathspec; print(pathspec.__version__)"
-dvc version
-```
-
-Expected pathspec version: `0.12.1`
-
-## DVC error: `sqlite3.OperationalError: unable to open database file`
-
-Cause: DVC site cache path is not writable.
-
-Fix:
-
-```bash
-cd /Users/pratikkanjilal/Documents/workforce-mlops
-source .venv/bin/activate
-mkdir -p .dvc/site-cache
-dvc config core.site_cache_dir .dvc/site-cache
-dvc status
-```
-
 ## DVC push error: `Unable to locate credentials`
 
-Cause: AWS credentials are not available to DVC/s3fs.
+Cause: AWS credentials unavailable for DVC/s3fs.
 
 Fix:
 
 ```bash
-cd /Users/pratikkanjilal/Documents/workforce-mlops
-source .venv/bin/activate
-
 aws sts get-caller-identity
-# if this fails, run aws configure or export AWS_PROFILE
+# if this fails: configure credentials in AWS Console/CLI profile first
 
-export AWS_REGION="us-east-1"
-export DVC_S3_BUCKET="<your-dvc-bucket>"
-export AWS_PROFILE="default"  # optional
-
+cd <repo-root>
+source .venv/bin/activate
+export AWS_REGION=us-east-1
+export DVC_S3_BUCKET=<your-dvc-bucket>
 bash scripts/setup_dvc_s3.sh
 dvc push -v -j 1
 ```
 
-## AWS CLI error: `Could not connect to the endpoint URL`
+## DVC push error: `AccessDenied` / `403`
 
-Cause: network path to AWS endpoint is blocked.
+Cause: IAM permissions missing on the DVC S3 bucket.
 
-Fix:
+Required actions:
 
-- Check internet and corporate VPN/proxy constraints.
-- Verify region endpoint connectivity:
+- `s3:ListBucket` on `arn:aws:s3:::<bucket>`
+- `s3:GetObject`, `s3:PutObject`, `s3:DeleteObject` on `arn:aws:s3:::<bucket>/*`
 
-```bash
-curl -I https://sts.us-east-1.amazonaws.com/
-aws sts get-caller-identity --region us-east-1
-```
+## API error: `Model artifacts not found at artifacts/model`
 
-## DVC push error: `AccessDenied` or `403`
-
-Cause: IAM identity does not have S3 permissions for the DVC bucket.
+Cause: model artifacts have not been produced/pulled.
 
 Fix:
 
-- Ensure your IAM user/role has `s3:ListBucket`, `s3:GetObject`, `s3:PutObject` on the DVC bucket and prefix.
-- Re-run:
-
 ```bash
-aws sts get-caller-identity
-dvc push -v -j 1
-```
-
-## Migrating from old DagsHub remote to AWS S3 remote
-
-If your repo previously used DagsHub, reset remote config before pushing:
-
-```bash
-cd /Users/pratikkanjilal/Documents/workforce-mlops
+cd <repo-root>
 source .venv/bin/activate
-rm -f .dvc/config.local
-export AWS_REGION="us-east-1"
-export DVC_S3_BUCKET="<your-dvc-bucket>"
-bash scripts/setup_dvc_s3.sh
-dvc push -v -j 1
+export PYTHONPATH=src
+dvc repro
+dvc pull
 ```
 
-## Training warning: `RuntimeWarning: overflow encountered in exp`
+PowerShell equivalent:
 
-Status: already handled in training code by clipping logits before sigmoid probability conversion.
+```powershell
+Set-Location <repo-root>
+.\.venv\Scripts\Activate.ps1
+$env:PYTHONPATH="src"
+dvc repro
+dvc pull
+```
 
-## MLflow service error: `sqlite3.OperationalError: unable to open database file` (huey stack trace)
+## Notebook runs but training cell fails (torch runtime issue)
 
-Cause: EC2 MLflow was installed as unpinned latest version and/or used relative sqlite paths.  
-Fix in this repo now pins `mlflow==2.17.2` and uses absolute backend sqlite path.
+If your environment has PyTorch runtime issues, EDA/preprocessing cells should still work.
 
-Run:
+Use this to run only non-torch tests:
 
 ```bash
-cd /Users/pratikkanjilal/Documents/workforce-mlops
+cd <repo-root>
 source .venv/bin/activate
-source infra/aws_outputs.env
-bash scripts/setup_mlflow_ec2.sh
+PYTHONPATH=src pytest -q
 ```
 
-Verify on EC2:
+Run torch test explicitly when your runtime is stable:
 
 ```bash
-ssh -i "$EC2_KEY_PATH" ubuntu@"$EC2_PUBLIC_IP" "sudo systemctl status mlflow --no-pager"
-ssh -i "$EC2_KEY_PATH" ubuntu@"$EC2_PUBLIC_IP" "curl -I http://127.0.0.1:5000"
+RUN_TORCH_TESTS=1 PYTHONPATH=src pytest -q tests/test_model_forward.py
+```
+
+## API prediction returns `503` with `PyTorch runtime is not usable`
+
+Cause: Torch installation exists but native runtime is broken for current OS/Python build.
+
+Fix:
+
+```bash
+cd <repo-root>
+source .venv/bin/activate
+python -V   # must be 3.11 or 3.12
+pip uninstall -y torch
+pip install --no-cache-dir -r requirements.txt
+python -c "import torch; print(torch.__version__)"
+```
+
+If import still fails, recreate the virtual environment with a supported Python and reinstall:
+
+```bash
+cd <repo-root>
+rm -rf .venv
+bash scripts/create_venv.sh
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+## Argo CD not deploying new image
+
+Check:
+
+1. `.github/workflows/cd.yml` succeeded.
+2. `deploy/k8s/overlays/prod/kustomization.yaml` was updated with new tag.
+3. Argo CD app is `Synced` and `Healthy`.
+
+Commands:
+
+```bash
+kubectl -n argocd get applications
+kubectl -n workforce-mlops get deploy,svc,pods
 ```

@@ -1,0 +1,22 @@
+<svg width="480" height="300" viewBox="0 0 480 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Hiring trend">
+  <defs>
+    <linearGradient id="bg2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0d2844"/>
+      <stop offset="1" stop-color="#151737"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="480" height="300" rx="24" fill="url(#bg2)"/>
+  <g opacity="0.22" stroke="#dbebff" stroke-width="1.2">
+    <line x1="60" y1="42" x2="60" y2="258"/>
+    <line x1="60" y1="258" x2="438" y2="258"/>
+  </g>
+  <polyline points="74,220 128,200 182,210 236,170 290,178 344,132 398,114" fill="none" stroke="#00e7ff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <polyline points="74,232 128,226 182,214 236,208 290,190 344,176 398,158" fill="none" stroke="#ff4ecd" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
+  <g fill="#7bff7b">
+    <circle cx="128" cy="200" r="6"/>
+    <circle cx="236" cy="170" r="6"/>
+    <circle cx="344" cy="132" r="6"/>
+    <circle cx="398" cy="114" r="6"/>
+  </g>
+  <text x="74" y="78" fill="#ebf4ff" font-size="22" font-family="Arial, sans-serif" font-weight="700">Hiring vs Attrition Trend</text>
+</svg>

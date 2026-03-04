@@ -1,6 +1,20 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+MODE="${MODE:-cli}" # cli|console
+
+if [[ "${1:-}" == "--console" ]]; then
+  MODE="console"
+fi
+if [[ "${1:-}" == "--cli" ]]; then
+  MODE="cli"
+fi
+
+if [[ "$MODE" != "cli" && "$MODE" != "console" ]]; then
+  echo "Invalid MODE='${MODE}'. Use MODE=cli or MODE=console."
+  exit 1
+fi
+
 if [[ -z "${DVC_S3_BUCKET:-}" || -z "${AWS_REGION:-}" ]]; then
   echo "Set DVC_S3_BUCKET and AWS_REGION first."
   exit 1
@@ -9,6 +23,22 @@ fi
 if [[ "${DVC_S3_BUCKET}" == *"<"* || "${DVC_S3_BUCKET}" == *">"* ]]; then
   echo "DVC_S3_BUCKET looks like placeholder text: ${DVC_S3_BUCKET}"
   exit 1
+fi
+
+if [[ "$MODE" == "console" ]]; then
+  echo "MODE=console selected."
+  echo "No AWS Console action is needed for this step if bucket already exists."
+  echo "Run these local commands to point DVC to your S3 bucket:"
+  echo
+  echo "  dvc config core.site_cache_dir .dvc/site-cache"
+  echo "  dvc remote add -d origin s3://${DVC_S3_BUCKET}/dvc --force"
+  echo "  dvc remote modify origin --unset endpointurl"
+  echo "  dvc remote modify origin region ${AWS_REGION}"
+  if [[ -n "${AWS_PROFILE:-}" ]]; then
+    echo "  dvc remote modify --local origin profile ${AWS_PROFILE}"
+  fi
+  echo "  dvc push -v -j 1"
+  exit 0
 fi
 
 if ! command -v dvc >/dev/null 2>&1; then

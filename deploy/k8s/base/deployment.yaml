@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: workforce-mlops-api
+  labels:
+    app.kubernetes.io/name: workforce-mlops-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: workforce-mlops-api
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: workforce-mlops-api
+    spec:
+      containers:
+        - name: api
+          image: workforce-mlops-app:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+              name: http
+          env:
+            - name: AUTO_CLOUD_CONNECT
+              value: "1"
+            - name: DVC_AUTO_PULL
+              value: "0"
+            - name: MODEL_ARTIFACT_DIR
+              value: /app/artifacts/model
+            - name: PYTHONPATH
+              value: /app/src
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi

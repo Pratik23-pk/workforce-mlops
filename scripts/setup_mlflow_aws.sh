@@ -3,7 +3,7 @@ set -euo pipefail
 
 if [[ -z "${MLFLOW_TRACKING_URI:-}" ]]; then
   echo "Set MLFLOW_TRACKING_URI first."
-  echo "Example (self-hosted on EC2): export MLFLOW_TRACKING_URI=http://<EC2_HOST>:5000"
+  echo "Example (self-hosted): export MLFLOW_TRACKING_URI=http://<mlflow-host>:5000"
   echo "Example (managed): export MLFLOW_TRACKING_URI=<your-managed-mlflow-tracking-uri>"
   exit 1
 fi

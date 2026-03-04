@@ -1,0 +1,23 @@
+<svg width="480" height="300" viewBox="0 0 480 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Forecast scenario">
+  <defs>
+    <linearGradient id="bg4" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0f2949"/>
+      <stop offset="1" stop-color="#2b1238"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="480" height="300" rx="24" fill="url(#bg4)"/>
+  <g opacity="0.25" stroke="#d6e8ff" stroke-width="1.1">
+    <line x1="38" y1="60" x2="442" y2="60"/>
+    <line x1="38" y1="110" x2="442" y2="110"/>
+    <line x1="38" y1="160" x2="442" y2="160"/>
+    <line x1="38" y1="210" x2="442" y2="210"/>
+    <line x1="38" y1="260" x2="442" y2="260"/>
+  </g>
+  <path d="M46 224 C102 210, 146 180, 202 168 C258 154, 312 124, 360 112 C390 103, 416 92, 436 82" fill="none" stroke="#00e7ff" stroke-width="6" stroke-linecap="round"/>
+  <path d="M46 236 C102 226, 146 206, 202 202 C258 196, 312 184, 360 172 C390 164, 416 156, 436 146" fill="none" stroke="#ff6584" stroke-width="5" stroke-linecap="round" opacity="0.95"/>
+  <rect x="250" y="30" width="198" height="88" rx="12" fill="rgba(9,18,43,0.74)" stroke="rgba(255,255,255,0.22)"/>
+  <text x="266" y="58" fill="#ecf4ff" font-size="17" font-family="Arial, sans-serif" font-weight="700">Scenario Mix</text>
+  <text x="266" y="80" fill="#c8dcff" font-size="13" font-family="Arial, sans-serif">Expansion / Balanced /</text>
+  <text x="266" y="98" fill="#c8dcff" font-size="13" font-family="Arial, sans-serif">Stress</text>
+  <text x="38" y="42" fill="#ecf4ff" font-size="22" font-family="Arial, sans-serif" font-weight="700">Forecast Pathways</text>
+</svg>

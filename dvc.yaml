@@ -27,28 +27,62 @@ stages:
       - data/processed/test.csv
 
   train:
-    cmd: OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=src python -m workforce_mlops.models.train --train-path data/processed/train.csv --val-path data/processed/val.csv --output-dir artifacts/model --params params.yaml
+    cmd: OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=src python -m workforce_mlops.models.train --train-path data/processed/train.csv --val-path data/processed/val.csv --output-dir artifacts/baseline_model --params params.yaml
     deps:
       - src/workforce_mlops/models/train.py
       - src/workforce_mlops/models/multitask_model.py
+      - src/workforce_mlops/mlflow_utils.py
       - data/processed/train.csv
       - data/processed/val.csv
+      - params.yaml
+    outs:
+      - artifacts/baseline_model/model.pt
+      - artifacts/baseline_model/preprocessor.joblib
+      - artifacts/baseline_model/metadata.json
+    metrics:
+      - reports/val_metrics.json
+
+  compare_models:
+    cmd: OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=src python -m workforce_mlops.models.compare_models --input-path data/interim/workforce_clean.csv --params params.yaml --output-report reports/model_comparison.csv --output-summary reports/model_comparison_summary.json --artifact-dir artifacts/experiments
+    deps:
+      - src/workforce_mlops/models/compare_models.py
+      - src/workforce_mlops/models/model_factory.py
+      - src/workforce_mlops/models/multitask_model.py
+      - src/workforce_mlops/mlflow_utils.py
+      - src/workforce_mlops/data/preprocess.py
+      - data/interim/workforce_clean.csv
+      - params.yaml
+    outs:
+      - reports/model_comparison.csv
+      - reports/model_comparison_summary.json
+      - artifacts/experiments
+
+  promote_model:
+    cmd: PYTHONPATH=src python -m workforce_mlops.models.promote_model --comparison-report reports/model_comparison.csv --summary-path reports/model_comparison_summary.json --experiments-dir artifacts/experiments --output-dir artifacts/model --params params.yaml --promotion-report reports/model_promotion.json
+    deps:
+      - src/workforce_mlops/models/promote_model.py
+      - src/workforce_mlops/mlflow_utils.py
+      - reports/model_comparison.csv
+      - reports/model_comparison_summary.json
+      - artifacts/experiments
       - params.yaml
     outs:
       - artifacts/model/model.pt
       - artifacts/model/preprocessor.joblib
       - artifacts/model/metadata.json
-    metrics:
-      - reports/val_metrics.json
+      - reports/model_promotion.json
 
   evaluate:
     cmd: PYTHONPATH=src python -m workforce_mlops.models.evaluate --test-path data/processed/test.csv --artifact-dir artifacts/model --report-path reports/test_metrics.json
     deps:
       - src/workforce_mlops/models/evaluate.py
       - src/workforce_mlops/models/predict.py
+      - src/workforce_mlops/models/model_factory.py
+      - src/workforce_mlops/mlflow_utils.py
       - data/processed/test.csv
       - artifacts/model/model.pt
       - artifacts/model/preprocessor.joblib
       - artifacts/model/metadata.json
+      - reports/model_promotion.json
     metrics:
       - reports/test_metrics.json

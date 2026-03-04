@@ -1,4 +1,4 @@
-name: CD
+name: CD (Build + GitOps)
 
 on:
   push:
@@ -6,15 +6,21 @@ on:
   workflow_dispatch:
 
 jobs:
-  deploy:
+  build-and-release:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     permissions:
       id-token: write
-      contents: read
+      contents: write
+    env:
+      MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
+      MLFLOW_EXPERIMENT_NAME: ${{ secrets.MLFLOW_EXPERIMENT_NAME }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
@@ -22,19 +28,41 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Setup Python for DVC pull
+      - name: Setup Python for DVC + CT
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+
+      - name: Normalize MLflow tracking URI
+        run: |
+          if [[ -z "${MLFLOW_TRACKING_URI}" ]]; then
+            echo "MLFLOW_TRACKING_URI not set. Using local mlruns fallback in CI runner."
+            exit 0
+          fi
+          if ! curl -fsS --max-time 5 "${MLFLOW_TRACKING_URI%/}/" >/dev/null; then
+            echo "MLFLOW_TRACKING_URI is unreachable. Falling back to local mlruns in CI runner."
+            echo "MLFLOW_TRACKING_URI=" >> "$GITHUB_ENV"
+          fi
 
       - name: Pull DVC artifacts
         run: |
           python -m pip install --upgrade pip
           pip install "dvc[s3]==3.58.0" "pathspec==0.12.1"
-          aws sts get-caller-identity
-          dvc version
-          dvc remote list
+          dvc remote add -f origin "s3://${{ secrets.DVC_S3_BUCKET }}/dvc"
+          dvc remote modify origin region "${{ secrets.AWS_REGION }}"
           dvc pull -v -j 1
+
+      - name: Install model/runtime dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: CT auto-train + compare + promote + evaluate
+        run: |
+          OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=src dvc repro compare_models promote_model evaluate -v
+
+      - name: Push refreshed DVC artifacts
+        run: |
+          dvc push -v -j 1
 
       - name: Login to ECR
         id: ecr
@@ -48,25 +76,26 @@ jobs:
         run: |
           docker build -f docker/Dockerfile -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
           docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
-          echo "IMAGE_URI=$REGISTRY/$REPOSITORY:$IMAGE_TAG" >> $GITHUB_ENV
+          echo "IMAGE_REPOSITORY=$REGISTRY/$REPOSITORY" >> $GITHUB_ENV
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
 
-      - name: Deploy on EC2 via SSH
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            export AWS_REGION=${{ secrets.AWS_REGION }}
-            IMAGE_URI=${{ env.IMAGE_URI }}
-            if ! command -v docker >/dev/null 2>&1; then
-              sudo apt-get update
-              sudo apt-get install -y docker.io
-              sudo systemctl enable docker
-              sudo systemctl start docker
-            fi
-            aws ecr get-login-password --region "$AWS_REGION" | sudo docker login --username AWS --password-stdin "$(echo "$IMAGE_URI" | cut -d'/' -f1)"
-            sudo docker rm -f workforce-mlops-app || true
-            sudo docker system prune -af || true
-            sudo docker pull "$IMAGE_URI"
-            sudo docker run -d --name workforce-mlops-app -p 80:8501 "$IMAGE_URI"
+      - name: Update GitOps image tag (Argo CD source of truth)
+        run: |
+          OVERLAY_FILE="deploy/k8s/overlays/prod/kustomization.yaml"
+          test -f "$OVERLAY_FILE"
+          sed -i "s|newName: .*|newName: ${IMAGE_REPOSITORY}|" "$OVERLAY_FILE"
+          sed -i "s|newTag: .*|newTag: ${IMAGE_TAG}|" "$OVERLAY_FILE"
+
+      - name: Commit and push manifest change
+        run: |
+          FILES_TO_COMMIT="deploy/k8s/overlays/prod/kustomization.yaml dvc.lock"
+          if git diff --quiet -- ${FILES_TO_COMMIT}; then
+            echo "No manifest/model-lock changes to commit."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add deploy/k8s/overlays/prod/kustomization.yaml dvc.lock
+          git commit -m "chore(gitops): auto-promote model + deploy image ${IMAGE_TAG}"
+          git push

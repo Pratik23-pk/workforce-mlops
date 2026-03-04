@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import f1_score, mean_absolute_error, mean_squared_error, roc_auc_score
 
+from workforce_mlops.mlflow_utils import get_configured_mlflow
 from workforce_mlops.models.predict import predict_df
 
 
@@ -25,6 +26,7 @@ def rmse(y_true: np.ndarray, y_pred: np.ndarray) -> float:
 
 def main() -> None:
     args = parse_args()
+    mlflow = get_configured_mlflow(default_experiment_name="workforce-evaluation")
 
     df = pd.read_csv(args.test_path)
     pred = predict_df(df, args.artifact_dir)
@@ -64,6 +66,20 @@ def main() -> None:
     report_path = Path(args.report_path)
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text(json.dumps(metrics, indent=2), encoding="utf-8")
+
+    with mlflow.start_run(run_name="evaluate-production-model"):
+        mlflow.set_tags({"project": "workforce-mlops", "stage": "evaluate"})
+        mlflow.log_params(
+            {
+                "test_path": args.test_path,
+                "artifact_dir": args.artifact_dir,
+                "rows": int(len(df)),
+            }
+        )
+        for key, value in metrics.items():
+            if np.isfinite(value):
+                mlflow.log_metric(key, float(value))
+        mlflow.log_artifact(str(report_path))
 
     print(json.dumps(metrics, indent=2))
 

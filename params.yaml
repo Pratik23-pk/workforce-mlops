@@ -29,3 +29,13 @@ training:
     layoffs: 1.0
     layoff_risk: 1.0
     workforce_volatility: 1.0
+
+model_selection:
+  selection_metric: val_composite
+  lower_is_better: true
+  fallback_model: baseline_mlp
+  val_layoff_risk_auc_min: 0.50
+  test_layoff_risk_auc_min: 0.50
+  val_hiring_rmse_max:
+  val_layoffs_rmse_max:
+  val_volatility_rmse_max:

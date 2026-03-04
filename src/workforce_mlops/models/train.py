@@ -2,23 +2,50 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 from pathlib import Path
+from typing import Any
 
 import joblib
-import mlflow
 import numpy as np
 import pandas as pd
-import torch
 import yaml
 from sklearn.compose import ColumnTransformer
 from sklearn.metrics import f1_score, mean_absolute_error, mean_squared_error, roc_auc_score
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
-from torch import nn
-from torch.utils.data import DataLoader, TensorDataset
 
 from workforce_mlops.config import TARGET_COLUMNS
-from workforce_mlops.models.multitask_model import MultiTaskNet
+from workforce_mlops.mlflow_utils import get_configured_mlflow
+
+TORCH_MODULE = None
+NN_MODULE = None
+DATALOADER_MODULE = None
+TENSORDATASET_MODULE = None
+
+
+def require_torch():
+    global TORCH_MODULE, NN_MODULE, DATALOADER_MODULE, TENSORDATASET_MODULE
+
+    if TORCH_MODULE is not None:
+        return TORCH_MODULE, NN_MODULE, DATALOADER_MODULE, TENSORDATASET_MODULE
+
+    try:
+        from torch import nn as nn_mod  # noqa: I001
+        from torch.utils.data import (
+            DataLoader as dataloader_mod,
+            TensorDataset as tensor_dataset_mod,
+        )
+        import torch as torch_mod
+    except ModuleNotFoundError as exc:
+        raise ModuleNotFoundError(
+            "PyTorch is required for training. Install dependencies with "
+            "`pip install -r requirements.txt`."
+        ) from exc
+
+    TORCH_MODULE = torch_mod
+    NN_MODULE = nn_mod
+    DATALOADER_MODULE = dataloader_mod
+    TENSORDATASET_MODULE = tensor_dataset_mod
+    return TORCH_MODULE, NN_MODULE, DATALOADER_MODULE, TENSORDATASET_MODULE
 
 
 def parse_args() -> argparse.Namespace:
@@ -31,9 +58,10 @@ def parse_args() -> argparse.Namespace:
 
 
 def set_seed(seed: int) -> None:
+    torch_mod, _, _, _ = require_torch()
     np.random.seed(seed)
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
+    torch_mod.manual_seed(seed)
+    torch_mod.cuda.manual_seed_all(seed)
 
 
 def build_preprocessor(numerical_cols: list[str], categorical_cols: list[str]) -> ColumnTransformer:
@@ -67,9 +95,10 @@ def regression_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> tuple[float, f
     return rmse, mae
 
 
-def evaluate(model: MultiTaskNet, x: torch.Tensor, y: dict[str, torch.Tensor]) -> dict[str, float]:
+def evaluate(model: Any, x: Any, y: dict[str, Any]) -> dict[str, float]:
+    torch_mod, _, _, _ = require_torch()
     model.eval()
-    with torch.no_grad():
+    with torch_mod.no_grad():
         out = model(x)
 
     hiring_pred = out["hiring"].cpu().numpy()
@@ -106,6 +135,7 @@ def evaluate(model: MultiTaskNet, x: torch.Tensor, y: dict[str, torch.Tensor]) -
 
 def main() -> None:
     args = parse_args()
+    torch_mod, nn, DataLoader, TensorDataset = require_torch()
     params = yaml.safe_load(Path(args.params).read_text(encoding="utf-8"))
 
     train_cfg = params["training"]
@@ -131,11 +161,11 @@ def main() -> None:
     y_train_np = prepare_targets(train_df)
     y_val_np = prepare_targets(val_df)
 
-    x_train_t = torch.from_numpy(x_train_np)
-    x_val_t = torch.from_numpy(x_val_np)
+    x_train_t = torch_mod.from_numpy(x_train_np)
+    x_val_t = torch_mod.from_numpy(x_val_np)
 
-    y_train_t = {k: torch.from_numpy(v) for k, v in y_train_np.items()}
-    y_val_t = {k: torch.from_numpy(v) for k, v in y_val_np.items()}
+    y_train_t = {k: torch_mod.from_numpy(v) for k, v in y_train_np.items()}
+    y_val_t = {k: torch_mod.from_numpy(v) for k, v in y_val_np.items()}
 
     dataset = TensorDataset(
         x_train_t,
@@ -147,6 +177,8 @@ def main() -> None:
 
     loader = DataLoader(dataset, batch_size=int(train_cfg["batch_size"]), shuffle=True)
 
+    from workforce_mlops.models.multitask_model import MultiTaskNet
+
     model = MultiTaskNet(
         input_dim=x_train_t.shape[1],
         hidden_dims=[int(v) for v in train_cfg["hidden_dims"]],
@@ -156,7 +188,7 @@ def main() -> None:
     mse_loss = nn.MSELoss()
     bce_loss = nn.BCEWithLogitsLoss()
 
-    optimizer = torch.optim.Adam(
+    optimizer = torch_mod.optim.Adam(
         model.parameters(),
         lr=float(train_cfg["lr"]),
         weight_decay=float(train_cfg["weight_decay"]),
@@ -166,10 +198,7 @@ def main() -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
     Path("reports").mkdir(parents=True, exist_ok=True)
 
-    env_tracking = os.getenv("MLFLOW_TRACKING_URI")
-    if env_tracking:
-        mlflow.set_tracking_uri(env_tracking)
-    mlflow.set_experiment(os.getenv("MLFLOW_EXPERIMENT_NAME", "workforce-multitask"))
+    mlflow = get_configured_mlflow(default_experiment_name="workforce-multitask")
 
     best_val = float("inf")
     best_state = None
@@ -249,10 +278,12 @@ def main() -> None:
         meta_path = output_dir / "metadata.json"
         val_metrics_path = Path("reports/val_metrics.json")
 
-        torch.save(model.state_dict(), model_path)
+        torch_mod.save(model.state_dict(), model_path)
         joblib.dump(preprocessor, prep_path)
 
         metadata = {
+            "model_name": "baseline_mlp",
+            "model_kind": "mlp",
             "feature_columns": feature_cols,
             "categorical_columns": categorical_cols,
             "numerical_columns": numerical_cols,

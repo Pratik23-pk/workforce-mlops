@@ -46,8 +46,8 @@ stages:
       size: 41920
     - path: params.yaml
       hash: md5
-      md5: 2b229bc7bc2cfd2740767e88d553d959
-      size: 560
+      md5: e36194fd61e7761579f5306768626fda
+      size: 806
     - path: src/workforce_mlops/data/preprocess.py
       hash: md5
       md5: e20e569b3f9a932f86c86055dd68dcf7
@@ -68,8 +68,8 @@ stages:
   train:
     cmd: OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=src python -m 
       workforce_mlops.models.train --train-path data/processed/train.csv 
-      --val-path data/processed/val.csv --output-dir artifacts/model --params 
-      params.yaml
+      --val-path data/processed/val.csv --output-dir artifacts/baseline_model 
+      --params params.yaml
     deps:
     - path: data/processed/train.csv
       hash: md5
@@ -81,26 +81,30 @@ stages:
       size: 2304
     - path: params.yaml
       hash: md5
-      md5: 2b229bc7bc2cfd2740767e88d553d959
-      size: 560
+      md5: e36194fd61e7761579f5306768626fda
+      size: 806
+    - path: src/workforce_mlops/mlflow_utils.py
+      hash: md5
+      md5: cf1e2856a7c59deb31e11eb03698a42d
+      size: 781
     - path: src/workforce_mlops/models/multitask_model.py
       hash: md5
       md5: 69b7b82c2875ef601a2e1fbfe7c234d6
       size: 1223
     - path: src/workforce_mlops/models/train.py
       hash: md5
-      md5: 1fb6cce2a0e85ec64e9acc94d6e0517b
-      size: 9381
+      md5: 88b7e116c38162fcef10b1beccbb91bc
+      size: 10531
     outs:
-    - path: artifacts/model/metadata.json
+    - path: artifacts/baseline_model/metadata.json
       hash: md5
-      md5: d4fc0b04e366e707a4ea29d2008f3edd
-      size: 766
-    - path: artifacts/model/model.pt
+      md5: b8b930314ad2b131cb5a17bca6bc3ed7
+      size: 821
+    - path: artifacts/baseline_model/model.pt
       hash: md5
       md5: 73e4bcf5f60ffe849c56925327badba6
       size: 56402
-    - path: artifacts/model/preprocessor.joblib
+    - path: artifacts/baseline_model/preprocessor.joblib
       hash: md5
       md5: 1d8dc4bbad8f600868fe62011c1e0043
       size: 4047
@@ -115,12 +119,12 @@ stages:
     deps:
     - path: artifacts/model/metadata.json
       hash: md5
-      md5: d4fc0b04e366e707a4ea29d2008f3edd
-      size: 766
+      md5: 51d8aa902a99effd2cc409fde574519c
+      size: 979
     - path: artifacts/model/model.pt
       hash: md5
-      md5: 73e4bcf5f60ffe849c56925327badba6
-      size: 56402
+      md5: 0c7ccf0c7e0ba8b564b0262f5e9436bb
+      size: 109930
     - path: artifacts/model/preprocessor.joblib
       hash: md5
       md5: 1d8dc4bbad8f600868fe62011c1e0043
@@ -129,16 +133,126 @@ stages:
       hash: md5
       md5: f01a625a765061389bef61b0604699bd
       size: 2235
+    - path: reports/model_promotion.json
+      hash: md5
+      md5: e5115d7c74d02cee16d382ee76ce57c5
+      size: 1019
+    - path: src/workforce_mlops/mlflow_utils.py
+      hash: md5
+      md5: cf1e2856a7c59deb31e11eb03698a42d
+      size: 781
     - path: src/workforce_mlops/models/evaluate.py
       hash: md5
-      md5: d43f455ddf1ee2d6dad00793a50aeced
-      size: 2375
+      md5: 6ae2c8edfb46a24f165c4e30a2c76279
+      size: 3040
+    - path: src/workforce_mlops/models/model_factory.py
+      hash: md5
+      md5: 34a8abb13778d2e85b51d0cb89dbff7e
+      size: 3983
     - path: src/workforce_mlops/models/predict.py
       hash: md5
-      md5: 55c310b4c8eee5da35e7059ff06aefc8
-      size: 2202
+      md5: e5e36e9de03747e66e512747dcae42fd
+      size: 3259
     outs:
     - path: reports/test_metrics.json
       hash: md5
-      md5: 8f0bba6b18a869e9ddfe34d23e9bce04
+      md5: c5135f5d54347edd5b870c6ee6dad0f7
       size: 279
+  compare_models:
+    cmd: OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=src python -m 
+      workforce_mlops.models.compare_models --input-path 
+      data/interim/workforce_clean.csv --params params.yaml --output-report 
+      reports/model_comparison.csv --output-summary 
+      reports/model_comparison_summary.json --artifact-dir artifacts/experiments
+    deps:
+    - path: data/interim/workforce_clean.csv
+      hash: md5
+      md5: 43230061d8f96162624cfd12bab030d4
+      size: 41920
+    - path: params.yaml
+      hash: md5
+      md5: e36194fd61e7761579f5306768626fda
+      size: 806
+    - path: src/workforce_mlops/data/preprocess.py
+      hash: md5
+      md5: e20e569b3f9a932f86c86055dd68dcf7
+      size: 2967
+    - path: src/workforce_mlops/mlflow_utils.py
+      hash: md5
+      md5: cf1e2856a7c59deb31e11eb03698a42d
+      size: 781
+    - path: src/workforce_mlops/models/compare_models.py
+      hash: md5
+      md5: 651a21cb3b32d26f6a82ed6c39d3b774
+      size: 15531
+    - path: src/workforce_mlops/models/model_factory.py
+      hash: md5
+      md5: 34a8abb13778d2e85b51d0cb89dbff7e
+      size: 3983
+    - path: src/workforce_mlops/models/multitask_model.py
+      hash: md5
+      md5: 69b7b82c2875ef601a2e1fbfe7c234d6
+      size: 1223
+    outs:
+    - path: artifacts/experiments
+      hash: md5
+      md5: ae124ea8477342e3d8c8808bffc4503b.dir
+      size: 462882
+      nfiles: 7
+    - path: reports/model_comparison.csv
+      hash: md5
+      md5: 2951c06b8a76ef8dcd441e436428f29c
+      size: 1066
+    - path: reports/model_comparison_summary.json
+      hash: md5
+      md5: e74a4c78b81902f97c62596564662094
+      size: 550
+  promote_model:
+    cmd: PYTHONPATH=src python -m workforce_mlops.models.promote_model 
+      --comparison-report reports/model_comparison.csv --summary-path 
+      reports/model_comparison_summary.json --experiments-dir 
+      artifacts/experiments --output-dir artifacts/model --params params.yaml 
+      --promotion-report reports/model_promotion.json
+    deps:
+    - path: artifacts/experiments
+      hash: md5
+      md5: ae124ea8477342e3d8c8808bffc4503b.dir
+      size: 462882
+      nfiles: 7
+    - path: params.yaml
+      hash: md5
+      md5: e36194fd61e7761579f5306768626fda
+      size: 806
+    - path: reports/model_comparison.csv
+      hash: md5
+      md5: 2951c06b8a76ef8dcd441e436428f29c
+      size: 1066
+    - path: reports/model_comparison_summary.json
+      hash: md5
+      md5: e74a4c78b81902f97c62596564662094
+      size: 550
+    - path: src/workforce_mlops/mlflow_utils.py
+      hash: md5
+      md5: cf1e2856a7c59deb31e11eb03698a42d
+      size: 781
+    - path: src/workforce_mlops/models/promote_model.py
+      hash: md5
+      md5: 155c96b667ae20d9ebd458d4bb2f2e3b
+      size: 12368
+    outs:
+    - path: artifacts/model/metadata.json
+      hash: md5
+      md5: 51d8aa902a99effd2cc409fde574519c
+      size: 979
+    - path: artifacts/model/model.pt
+      hash: md5
+      md5: 0c7ccf0c7e0ba8b564b0262f5e9436bb
+      size: 109930
+    - path: artifacts/model/preprocessor.joblib
+      hash: md5
+      md5: 1d8dc4bbad8f600868fe62011c1e0043
+      size: 4047
+    - path: reports/model_promotion.json
+      hash: md5
+      md5: e5115d7c74d02cee16d382ee76ce57c5
+      size: 1019
