@@ -4,15 +4,25 @@ __pycache__/
 *.pyo
 *.pyd
 *.egg-info/
+.eggs/
+build/
+dist/
+pip-wheel-metadata/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
 .coverage
+*.coverage
 coverage.xml
 htmlcov/
+.cache/
+.tox/
+.nox/
+.hypothesis/
 
 # Virtual environments
 .venv/
+.venv*/
 venv/
 
 # Local environment and secrets
@@ -22,17 +32,22 @@ venv/
 
 # Logs and temp
 *.tmp
+*.log
+*.out
+*.err
+*.pid
+*.pid.lock
 
 # Local MLflow
 mlruns/
 
 # Data and artifacts (managed by DVC, not Git)
-/data/raw/*.csv
+/data/raw/
 /data/interim/
 /data/processed/
 /artifacts/
-/reports/*.json
-/reports/*.csv
+/reports/**
+!/reports/.gitignore
 
 # DVC internal caches
 .dvc/cache/
@@ -40,14 +55,21 @@ mlruns/
 
 # OS/editor noise
 .DS_Store
+Thumbs.db
+.Spotlight-V100
+.Trashes
 .vscode/
 .idea/
 
 # Jupyter
 .ipynb_checkpoints/
+*.ipynb
 experiments/
 experiments/*.ipynb
 experiments/.ipynb_checkpoints/
+
+# Tests
+tests/
 
 # Local infra outputs/keys
 infra/aws_outputs.env
