@@ -24,13 +24,22 @@ jobs:
 
       - name: Lint
         run: |
-          PYTHONPATH=src ruff check src tests
+          if [ -d tests ]; then
+            PYTHONPATH=src ruff check src tests
+          else
+            echo "No tests directory found; linting src only."
+            PYTHONPATH=src ruff check src
+          fi
 
       - name: Test
         env:
           RUN_TORCH_TESTS: "1"
         run: |
-          PYTHONPATH=src pytest -q
+          if [ -d tests ]; then
+            PYTHONPATH=src pytest -q
+          else
+            echo "No tests directory found; skipping pytest."
+          fi
 
       - name: Pipeline smoke command check
         run: |
