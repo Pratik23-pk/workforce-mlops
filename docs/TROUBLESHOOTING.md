@@ -96,6 +96,21 @@ Required actions:
 - `s3:ListBucket` on `arn:aws:s3:::<bucket>`
 - `s3:GetObject`, `s3:PutObject`, `s3:DeleteObject` on `arn:aws:s3:::<bucket>/*`
 
+## MLflow UI shows `403 Forbidden` / `Invalid Host header`
+
+Cause: MLflow 2.17+ enforces host header allow-lists. If you start the server
+without `--allowed-hosts`, requests to the public IP/DNS are rejected.
+
+Fix:
+
+```bash
+export MLFLOW_PUBLIC_HOST=<public-ip-or-dns>
+export MLFLOW_ALLOWED_HOSTS="<public-ip-or-dns>,localhost,127.0.0.1"
+bash scripts/run_mlflow_server.sh
+```
+
+Make sure `MLFLOW_TRACKING_URI` matches the same public host.
+
 ## API error: `Model artifacts not found at artifacts/model`
 
 Cause: model artifacts have not been produced/pulled.

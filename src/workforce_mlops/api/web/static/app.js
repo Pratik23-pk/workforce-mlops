@@ -1,8 +1,11 @@
 const state = {
   timelineChart: null,
   forecastChart: null,
+  timelinePoints: null,
+  forecastPoints: null,
 };
 let busy = false;
+const THEME_KEY = "workforce_theme";
 
 const fmtNum = (value, decimals = 0) =>
   new Intl.NumberFormat("en-US", {
@@ -12,6 +15,56 @@ const fmtNum = (value, decimals = 0) =>
 const fmtPct = (value) => `${(value * 100).toFixed(2)}%`;
 const fmtFloat = (value) => Number(value).toFixed(4);
 
+function getThemeColors() {
+  const styles = getComputedStyle(document.documentElement);
+  const read = (name) => styles.getPropertyValue(name).trim();
+  return {
+    atmosphereTop: read("--chart-atmosphere-top"),
+    atmosphereBottom: read("--chart-atmosphere-bottom"),
+    atmosphereStroke: read("--chart-atmosphere-stroke"),
+    recessionBand: read("--chart-recession-band"),
+    riskHigh: read("--chart-risk-high"),
+    riskMed: read("--chart-risk-med"),
+    legend: read("--chart-legend"),
+    tooltipBg: read("--chart-tooltip-bg"),
+    tooltipBorder: read("--chart-tooltip-border"),
+    tooltipTitle: read("--chart-tooltip-title"),
+    tooltipBody: read("--chart-tooltip-body"),
+    tick: read("--chart-tick"),
+    grid: read("--chart-grid"),
+    netPos: read("--chart-net-pos"),
+    netNeg: read("--chart-net-neg"),
+    yNet: read("--chart-ynet"),
+    yRisk: read("--chart-yrisk"),
+    yEmployees: read("--chart-yemployees"),
+    yVol: read("--chart-yvol"),
+    hiringLineStart: read("--chart-hiring-line-start"),
+    hiringLineEnd: read("--chart-hiring-line-end"),
+    hiringFillStart: read("--chart-hiring-fill-start"),
+    hiringFillEnd: read("--chart-hiring-fill-end"),
+    layoffsLineStart: read("--chart-layoffs-line-start"),
+    layoffsLineEnd: read("--chart-layoffs-line-end"),
+    layoffsFillStart: read("--chart-layoffs-fill-start"),
+    layoffsFillEnd: read("--chart-layoffs-fill-end"),
+    trendLineStart: read("--chart-trend-line-start"),
+    trendLineEnd: read("--chart-trend-line-end"),
+    hiresBarStart: read("--chart-hires-bar-start"),
+    hiresBarEnd: read("--chart-hires-bar-end"),
+    layoffsBarStart: read("--chart-layoffs-bar-start"),
+    layoffsBarEnd: read("--chart-layoffs-bar-end"),
+    riskLineStart: read("--chart-risk-line-start"),
+    riskLineEnd: read("--chart-risk-line-end"),
+    employeeLineStart: read("--chart-employee-line-start"),
+    employeeLineEnd: read("--chart-employee-line-end"),
+    employeeFillStart: read("--chart-employee-fill-start"),
+    employeeFillEnd: read("--chart-employee-fill-end"),
+    volatilityLineStart: read("--chart-volatility-line-start"),
+    volatilityLineEnd: read("--chart-volatility-line-end"),
+    message: read("--message"),
+    messageError: read("--message-error"),
+  };
+}
+
 const atmospherePlugin = {
   id: "atmosphere",
   beforeDraw(chart) {
@@ -19,16 +72,17 @@ const atmospherePlugin = {
     if (!chartArea) return;
 
     const { left, right, top, bottom } = chartArea;
+    const colors = getThemeColors();
     ctx.save();
 
     const gradient = ctx.createLinearGradient(0, top, 0, bottom);
-    gradient.addColorStop(0, "rgba(255, 255, 255, 0.06)");
-    gradient.addColorStop(1, "rgba(0, 0, 0, 0.16)");
+    gradient.addColorStop(0, colors.atmosphereTop);
+    gradient.addColorStop(1, colors.atmosphereBottom);
     ctx.fillStyle = gradient;
     ctx.fillRect(left, top, right - left, bottom - top);
 
     ctx.globalAlpha = 0.12;
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.14)";
+    ctx.strokeStyle = colors.atmosphereStroke;
     ctx.lineWidth = 1;
     for (let x = left; x < right; x += 26) {
       ctx.beginPath();
@@ -53,6 +107,7 @@ const recessionBandsPlugin = {
 
     const { ctx } = chart;
     const count = chart.data.labels.length;
+    const colors = getThemeColors();
 
     ctx.save();
     bands.forEach(({ start, end }) => {
@@ -66,7 +121,7 @@ const recessionBandsPlugin = {
       const left = startPx - leftGap / 2;
       const right = endPx + rightGap / 2;
 
-      ctx.fillStyle = "rgba(255, 101, 132, 0.16)";
+      ctx.fillStyle = colors.recessionBand;
       ctx.fillRect(left, y.top, right - left, y.bottom - y.top);
     });
     ctx.restore();
@@ -81,6 +136,7 @@ const riskZonesPlugin = {
     if (!yRisk || !x) return;
 
     const { ctx } = chart;
+    const colors = getThemeColors();
     const left = x.left;
     const right = x.right;
 
@@ -90,10 +146,10 @@ const riskZonesPlugin = {
     const yMedBottom = yRisk.getPixelForValue(0.3);
 
     ctx.save();
-    ctx.fillStyle = "rgba(255, 101, 132, 0.12)";
+    ctx.fillStyle = colors.riskHigh;
     ctx.fillRect(left, yHighTop, right - left, yHighBottom - yHighTop);
 
-    ctx.fillStyle = "rgba(255, 194, 71, 0.1)";
+    ctx.fillStyle = colors.riskMed;
     ctx.fillRect(left, yMedTop, right - left, yMedBottom - yMedTop);
     ctx.restore();
   },
@@ -104,7 +160,9 @@ Chart.register(atmospherePlugin, recessionBandsPlugin, riskZonesPlugin);
 function setMessage(text, isError = false) {
   const box = document.getElementById("messageBox");
   box.textContent = text;
-  box.style.color = isError ? "#ff8aa2" : "#9ac4ff";
+  box.dataset.state = isError ? "error" : "default";
+  const colors = getThemeColors();
+  box.style.color = isError ? colors.messageError : colors.message;
 }
 
 function setControlsBusy(status) {
@@ -140,6 +198,7 @@ function createGradient(ctx, c1, c2) {
 }
 
 function commonChartOptions() {
+  const colors = getThemeColors();
   return {
     responsive: true,
     maintainAspectRatio: false,
@@ -156,21 +215,21 @@ function commonChartOptions() {
       legend: {
         position: "top",
         labels: {
-          color: "#f6f8ff",
+          color: colors.legend,
           usePointStyle: true,
           boxWidth: 10,
           font: {
-            family: "Space Grotesk",
+            family: "Inter",
             weight: "700",
           },
         },
       },
       tooltip: {
-        backgroundColor: "rgba(10, 14, 36, 0.95)",
-        borderColor: "rgba(0, 231, 255, 0.55)",
+        backgroundColor: colors.tooltipBg,
+        borderColor: colors.tooltipBorder,
         borderWidth: 1,
-        titleColor: "#ffffff",
-        bodyColor: "#dbe8ff",
+        titleColor: colors.tooltipTitle,
+        bodyColor: colors.tooltipBody,
         padding: 10,
         displayColors: true,
       },
@@ -214,48 +273,40 @@ function buildRecessionBands(points) {
 function renderTimelineChart(points) {
   const canvas = document.getElementById("timelineChart");
   const ctx = canvas.getContext("2d");
+  const colors = getThemeColors();
   const labels = points.map((p) => p.year);
 
   if (state.timelineChart) {
     state.timelineChart.destroy();
   }
 
+  state.timelinePoints = points;
   const hiringSeries = points.map((p) => p.hiring);
   const layoffsSeries = points.map((p) => p.layoffs);
   const netSeries = points.map((p) => p.net_change);
 
-  const hiresLine = createGradient(ctx, "rgba(0, 231, 255, 1)", "rgba(0, 152, 255, 0.82)");
-  const hiresFill = createGradient(ctx, "rgba(0, 231, 255, 0.34)", "rgba(0, 231, 255, 0.02)");
-  const layoffsLine = createGradient(ctx, "rgba(255, 101, 132, 1)", "rgba(255, 78, 205, 0.8)");
-  const layoffsFill = createGradient(ctx, "rgba(255, 101, 132, 0.26)", "rgba(255, 101, 132, 0.01)");
-  const trendLine = createGradient(ctx, "rgba(255, 194, 71, 0.98)", "rgba(255, 150, 71, 0.9)");
+  const hiresLine = createGradient(ctx, colors.hiringLineStart, colors.hiringLineEnd);
+  const hiresFill = createGradient(ctx, colors.hiringFillStart, colors.hiringFillEnd);
+  const layoffsLine = createGradient(ctx, colors.layoffsLineStart, colors.layoffsLineEnd);
+  const layoffsFill = createGradient(ctx, colors.layoffsFillStart, colors.layoffsFillEnd);
+  const trendLine = createGradient(ctx, colors.trendLineStart, colors.trendLineEnd);
 
   state.timelineChart = new Chart(ctx, {
     data: {
       labels,
       datasets: [
         {
-          type: "bar",
-          label: "Net Change",
-          data: netSeries,
-          yAxisID: "yNet",
-          backgroundColor: (context) =>
-            context.raw >= 0 ? "rgba(123, 255, 123, 0.5)" : "rgba(255, 101, 132, 0.5)",
-          borderRadius: 5,
-          maxBarThickness: 22,
-          order: 3,
-        },
-        {
           type: "line",
           label: "Historical Hiring",
           data: hiringSeries,
           borderColor: hiresLine,
           backgroundColor: hiresFill,
-          borderWidth: 3,
-          pointRadius: 2,
-          pointHoverRadius: 5,
-          tension: 0.32,
+          borderWidth: 2,
+          pointRadius: 0,
+          pointHoverRadius: 4,
+          tension: 0.35,
           fill: true,
+          stack: "workforce",
           order: 1,
         },
         {
@@ -264,11 +315,12 @@ function renderTimelineChart(points) {
           data: layoffsSeries,
           borderColor: layoffsLine,
           backgroundColor: layoffsFill,
-          borderWidth: 3,
-          pointRadius: 2,
-          pointHoverRadius: 5,
-          tension: 0.32,
+          borderWidth: 2,
+          pointRadius: 0,
+          pointHoverRadius: 4,
+          tension: 0.35,
           fill: true,
+          stack: "workforce",
           order: 1,
         },
         {
@@ -283,6 +335,22 @@ function renderTimelineChart(points) {
           fill: false,
           order: 2,
         },
+        {
+          type: "line",
+          label: "Net Change",
+          data: netSeries,
+          yAxisID: "yNet",
+          borderColor: colors.yNet,
+          borderWidth: 2,
+          borderDash: [5, 4],
+          pointRadius: 3,
+          pointHoverRadius: 5,
+          pointBackgroundColor: (context) => (context.raw >= 0 ? colors.netPos : colors.netNeg),
+          pointBorderColor: (context) => (context.raw >= 0 ? colors.netPos : colors.netNeg),
+          tension: 0.25,
+          fill: false,
+          order: 3,
+        },
       ],
     },
     options: {
@@ -295,19 +363,21 @@ function renderTimelineChart(points) {
       },
       scales: {
         x: {
-          ticks: { color: "#d4d8ff" },
-          grid: { color: "rgba(255, 255, 255, 0.08)" },
+          ticks: { color: colors.tick, font: { weight: "600" } },
+          grid: { color: colors.grid },
         },
         y: {
           beginAtZero: true,
-          ticks: { color: "#d4d8ff" },
-          grid: { color: "rgba(255, 255, 255, 0.08)" },
+          stacked: true,
+          ticks: { color: colors.tick, font: { weight: "600" } },
+          grid: { color: colors.grid },
         },
         yNet: {
           position: "right",
           grid: { drawOnChartArea: false },
           ticks: {
-            color: "#b3ffcb",
+            color: colors.tick,
+            font: { weight: "600" },
             callback: (value) => fmtNum(value, 0),
           },
         },
@@ -319,18 +389,20 @@ function renderTimelineChart(points) {
 function renderForecastChart(forecast) {
   const canvas = document.getElementById("forecastChart");
   const ctx = canvas.getContext("2d");
+  const colors = getThemeColors();
   const labels = forecast.map((p) => p.year);
 
   if (state.forecastChart) {
     state.forecastChart.destroy();
   }
 
-  const hiresBar = createGradient(ctx, "rgba(0, 231, 255, 0.95)", "rgba(0, 153, 255, 0.7)");
-  const layoffsBar = createGradient(ctx, "rgba(255, 101, 132, 0.95)", "rgba(255, 78, 205, 0.68)");
-  const riskLine = createGradient(ctx, "rgba(123, 255, 123, 0.95)", "rgba(79, 255, 175, 0.8)");
-  const employeeLine = createGradient(ctx, "rgba(255, 194, 71, 1)", "rgba(255, 150, 71, 0.85)");
-  const employeeFill = createGradient(ctx, "rgba(255, 194, 71, 0.24)", "rgba(255, 194, 71, 0.02)");
-  const volatilityLine = createGradient(ctx, "rgba(191, 153, 255, 0.95)", "rgba(137, 115, 255, 0.8)");
+  state.forecastPoints = forecast;
+  const hiresBar = createGradient(ctx, colors.hiresBarStart, colors.hiresBarEnd);
+  const layoffsBar = createGradient(ctx, colors.layoffsBarStart, colors.layoffsBarEnd);
+  const riskLine = createGradient(ctx, colors.riskLineStart, colors.riskLineEnd);
+  const employeeLine = createGradient(ctx, colors.employeeLineStart, colors.employeeLineEnd);
+  const employeeFill = createGradient(ctx, colors.employeeFillStart, colors.employeeFillEnd);
+  const volatilityLine = createGradient(ctx, colors.volatilityLineStart, colors.volatilityLineEnd);
 
   state.forecastChart = new Chart(ctx, {
     data: {
@@ -341,8 +413,11 @@ function renderForecastChart(forecast) {
           label: "Predicted Hiring",
           data: forecast.map((p) => p.hiring),
           backgroundColor: hiresBar,
-          borderRadius: 8,
-          maxBarThickness: 30,
+          borderRadius: 12,
+          maxBarThickness: 26,
+          barPercentage: 0.7,
+          categoryPercentage: 0.6,
+          stack: "forecast",
           order: 2,
         },
         {
@@ -350,8 +425,11 @@ function renderForecastChart(forecast) {
           label: "Predicted Layoffs",
           data: forecast.map((p) => p.layoffs),
           backgroundColor: layoffsBar,
-          borderRadius: 8,
-          maxBarThickness: 30,
+          borderRadius: 12,
+          maxBarThickness: 26,
+          barPercentage: 0.7,
+          categoryPercentage: 0.6,
+          stack: "forecast",
           order: 2,
         },
         {
@@ -404,13 +482,14 @@ function renderForecastChart(forecast) {
       },
       scales: {
         x: {
-          ticks: { color: "#d4d8ff" },
-          grid: { color: "rgba(255, 255, 255, 0.08)" },
+          ticks: { color: colors.tick, font: { weight: "600" } },
+          grid: { color: colors.grid },
         },
         y: {
           beginAtZero: true,
-          ticks: { color: "#d4d8ff" },
-          grid: { color: "rgba(255, 255, 255, 0.08)" },
+          stacked: true,
+          ticks: { color: colors.tick, font: { weight: "600" } },
+          grid: { color: colors.grid },
         },
         yRisk: {
           position: "right",
@@ -418,7 +497,8 @@ function renderForecastChart(forecast) {
           max: 1,
           grid: { drawOnChartArea: false },
           ticks: {
-            color: "#9dffcb",
+            color: colors.tick,
+            font: { weight: "600" },
             callback: (value) => `${Math.round(value * 100)}%`,
           },
         },
@@ -427,7 +507,8 @@ function renderForecastChart(forecast) {
           offset: true,
           grid: { drawOnChartArea: false },
           ticks: {
-            color: "#ffd49f",
+            color: colors.tick,
+            font: { weight: "600" },
             callback: (value) => fmtNum(value, 0),
           },
         },
@@ -435,7 +516,8 @@ function renderForecastChart(forecast) {
           position: "left",
           grid: { drawOnChartArea: false },
           ticks: {
-            color: "#c8bdff",
+            color: colors.tick,
+            font: { weight: "600" },
             callback: (value) => fmtFloat(value),
           },
         },
@@ -537,7 +619,48 @@ function renderPresets(presets) {
   });
 }
 
+function refreshCharts() {
+  if (state.timelinePoints) {
+    renderTimelineChart(state.timelinePoints);
+  }
+  if (state.forecastPoints) {
+    renderForecastChart(state.forecastPoints);
+  }
+}
+
+function syncMessageTheme() {
+  const box = document.getElementById("messageBox");
+  if (!box || !box.textContent) return;
+  const colors = getThemeColors();
+  const isError = box.dataset.state === "error";
+  box.style.color = isError ? colors.messageError : colors.message;
+}
+
+function applyTheme(theme) {
+  const normalized = theme === "dark" ? "dark" : "light";
+  document.documentElement.dataset.theme = normalized;
+  localStorage.setItem(THEME_KEY, normalized);
+  const colors = getThemeColors();
+  Chart.defaults.color = colors.tick;
+  Chart.defaults.borderColor = colors.grid;
+  Chart.defaults.plugins.legend.labels.color = colors.legend;
+  Chart.defaults.plugins.tooltip.backgroundColor = colors.tooltipBg;
+  Chart.defaults.plugins.tooltip.borderColor = colors.tooltipBorder;
+  Chart.defaults.plugins.tooltip.titleColor = colors.tooltipTitle;
+  Chart.defaults.plugins.tooltip.bodyColor = colors.tooltipBody;
+  refreshCharts();
+  syncMessageTheme();
+}
+
+function initTheme() {
+  const stored = localStorage.getItem(THEME_KEY);
+  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const initial = stored || (prefersDark ? "dark" : "light");
+  applyTheme(initial);
+}
+
 async function bootstrap() {
+  initTheme();
   setMessage("Loading dashboard...");
   try {
     const [timeline, presetData] = await Promise.all([

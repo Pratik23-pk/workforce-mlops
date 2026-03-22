@@ -14,7 +14,7 @@ from sklearn.metrics import f1_score, mean_absolute_error, mean_squared_error, r
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 from workforce_mlops.config import TARGET_COLUMNS
-from workforce_mlops.mlflow_utils import get_configured_mlflow
+from workforce_mlops.mlflow_utils import get_configured_mlflow, log_repro_context
 
 TORCH_MODULE = None
 NN_MODULE = None
@@ -209,6 +209,7 @@ def main() -> None:
 
     with mlflow.start_run(run_name="multitask-dnn"):
         mlflow.set_tags({"project": "workforce-mlops", "model_type": "multitask-dnn"})
+        log_repro_context(mlflow)
         mlflow.log_params(
             {
                 "epochs": int(train_cfg["epochs"]),

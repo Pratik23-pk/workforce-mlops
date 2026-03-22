@@ -29,6 +29,22 @@ source infra/aws_gitops_outputs.env
 
 If you used console path, replace `<aws-account-id>` placeholders before sourcing.
 
+## 1b) Start MLflow Tracking Server (self-hosted)
+
+If you want MLflow logs visible across EC2 + GitHub Actions, run a tracking
+server and point `MLFLOW_TRACKING_URI` to it (use a public IP/DNS, not `0.0.0.0`).
+
+Example on an EC2 instance:
+
+```bash
+export MLFLOW_S3_BUCKET=<your-mlflow-bucket>
+export MLFLOW_PUBLIC_HOST=<public-ip-or-dns>
+export MLFLOW_ALLOWED_HOSTS="<public-ip-or-dns>,localhost,127.0.0.1"
+bash scripts/run_mlflow_server.sh
+```
+
+Security group inbound must allow TCP `5000` from your public IP.
+
 ## 2) Configure DVC remote to S3
 
 | CLI path | Console path |

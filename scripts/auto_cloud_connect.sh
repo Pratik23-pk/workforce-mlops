@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -f "${SCRIPT_DIR}/prompt_utils.sh" ]]; then
+  # shellcheck disable=SC1091
+  source "${SCRIPT_DIR}/prompt_utils.sh"
+fi
+
 log() {
   echo "[auto-cloud-connect] $*"
 }
@@ -252,11 +258,29 @@ pull_dvc_artifacts_if_requested() {
   fi
 }
 
+maybe_prompt_auto_pull() {
+  if [[ -n "${DVC_AUTO_PULL:-}" ]]; then
+    return
+  fi
+
+  if command -v prompt_yes_no >/dev/null 2>&1; then
+    if prompt_yes_no "Enable DVC auto-pull on container startup?" "n"; then
+      export DVC_AUTO_PULL="1"
+    else
+      export DVC_AUTO_PULL="0"
+    fi
+  else
+    export DVC_AUTO_PULL="0"
+  fi
+}
+
 main() {
   if [[ "${AUTO_CLOUD_CONNECT:-1}" != "1" ]]; then
     log "AUTO_CLOUD_CONNECT disabled"
     return
   fi
+
+  maybe_prompt_auto_pull
 
   local provider
   provider="$(detect_cloud_provider)"

@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -f "${SCRIPT_DIR}/prompt_utils.sh" ]]; then
+  # shellcheck disable=SC1091
+  source "${SCRIPT_DIR}/prompt_utils.sh"
+fi
+
 MODE="${MODE:-cli}" # cli|console
 
 if [[ "${1:-}" == "--console" ]]; then
@@ -13,6 +19,13 @@ fi
 if [[ "$MODE" != "cli" && "$MODE" != "console" ]]; then
   echo "Invalid MODE='${MODE}'. Use MODE=cli or MODE=console."
   exit 1
+fi
+
+if [[ -z "${DVC_S3_BUCKET:-}" ]] && command -v prompt_value >/dev/null 2>&1; then
+  prompt_value DVC_S3_BUCKET "Enter DVC S3 bucket name"
+fi
+if [[ -z "${AWS_REGION:-}" ]] && command -v prompt_value >/dev/null 2>&1; then
+  prompt_value AWS_REGION "Enter AWS region" "us-east-1"
 fi
 
 if [[ -z "${DVC_S3_BUCKET:-}" || -z "${AWS_REGION:-}" ]]; then

@@ -185,3 +185,19 @@ See:
 - `AWS_REGION`
 - `ECR_REPOSITORY`
 - `DVC_S3_BUCKET`
+- `MLFLOW_TRACKING_URI` (use a reachable host/IP, not `0.0.0.0`)
+- `MLFLOW_EXPERIMENT_NAME` (optional override)
+
+## MLflow Tracking Server (Self-hosted)
+
+If you run MLflow on your own VM/EC2 instance, you must start a tracking server
+and allow the public host in MLflow 2.17+:
+
+```bash
+export MLFLOW_S3_BUCKET=<your-mlflow-bucket>
+export MLFLOW_PUBLIC_HOST=<public-ip-or-dns>
+bash scripts/run_mlflow_server.sh
+```
+
+Then set `MLFLOW_TRACKING_URI=http://<public-ip-or-dns>:5000` for local runs and
+GitHub Actions.

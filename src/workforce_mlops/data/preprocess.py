@@ -8,6 +8,7 @@ import yaml
 from sklearn.model_selection import train_test_split
 
 from workforce_mlops.config import DEFAULT_FEATURE_COLUMNS
+from workforce_mlops.mlflow_utils import get_configured_mlflow, log_repro_context
 
 
 def parse_args() -> argparse.Namespace:
@@ -77,6 +78,27 @@ def main() -> None:
     train_df.to_csv(args.train_output, index=False)
     val_df.to_csv(args.val_output, index=False)
     test_df.to_csv(args.test_output, index=False)
+
+    mlflow = get_configured_mlflow(default_experiment_name="workforce-preprocess")
+    with mlflow.start_run(run_name="preprocess-split"):
+        mlflow.set_tags({"project": "workforce-mlops", "stage": "preprocess"})
+        log_repro_context(mlflow)
+        mlflow.log_params(
+            {
+                "input_path": str(args.input),
+                "train_output": str(args.train_output),
+                "val_output": str(args.val_output),
+                "test_output": str(args.test_output),
+                "layoff_risk_threshold": float(layoff_risk_threshold),
+            }
+        )
+        mlflow.log_metrics(
+            {
+                "train_rows": float(len(train_df)),
+                "val_rows": float(len(val_df)),
+                "test_rows": float(len(test_df)),
+            }
+        )
 
     print(
         "Saved splits | "

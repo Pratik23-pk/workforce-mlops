@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -f "${SCRIPT_DIR}/prompt_utils.sh" ]]; then
+  # shellcheck disable=SC1091
+  source "${SCRIPT_DIR}/prompt_utils.sh"
+fi
+
 MODE="${MODE:-cli}" # cli|console
 GITHUB_REPO="${GITHUB_REPO:-}"
 
@@ -26,10 +32,35 @@ required_vars=(
 
 for name in "${required_vars[@]}"; do
   if [[ -z "${!name:-}" ]]; then
+    if command -v prompt_value >/dev/null 2>&1; then
+      prompt_value "${name}" "Enter value for ${name}"
+    fi
+  fi
+  if [[ -z "${!name:-}" ]]; then
     echo "Missing required env var: ${name}"
     exit 1
   fi
 done
+
+if [[ -z "${MLFLOW_EXPERIMENT_NAME:-}" ]] && command -v prompt_yes_no >/dev/null 2>&1; then
+  if prompt_yes_no "Set optional MLflow experiment name secret?" "n"; then
+    prompt_value MLFLOW_EXPERIMENT_NAME "Enter MLflow experiment name" "workforce-multitask"
+  fi
+fi
+
+if [[ -z "${MLFLOW_TRACKING_USERNAME:-}" ]] && command -v prompt_yes_no >/dev/null 2>&1; then
+  if prompt_yes_no "Set optional MLflow tracking username/password secrets?" "n"; then
+    prompt_value MLFLOW_TRACKING_USERNAME "Enter MLflow tracking username"
+    prompt_value MLFLOW_TRACKING_PASSWORD "Enter MLflow tracking password" "" "1"
+  fi
+fi
+
+if [[ -z "${MLFLOW_REGISTER_MODEL:-}" ]] && command -v prompt_yes_no >/dev/null 2>&1; then
+  if prompt_yes_no "Enable optional MLflow model registry in CD?" "n"; then
+    export MLFLOW_REGISTER_MODEL="1"
+    prompt_value MLFLOW_REGISTERED_MODEL_NAME "Enter registered model name" "workforce-model"
+  fi
+fi
 
 if [[ "$MODE" == "console" ]]; then
   echo "MODE=console selected."
@@ -44,6 +75,18 @@ if [[ "$MODE" == "console" ]]; then
     echo "  MLFLOW_EXPERIMENT_NAME=${MLFLOW_EXPERIMENT_NAME}"
   else
     echo "  MLFLOW_EXPERIMENT_NAME=<optional, defaults from code>"
+  fi
+  if [[ -n "${MLFLOW_TRACKING_USERNAME:-}" ]]; then
+    echo "  MLFLOW_TRACKING_USERNAME=${MLFLOW_TRACKING_USERNAME}"
+  fi
+  if [[ -n "${MLFLOW_TRACKING_PASSWORD:-}" ]]; then
+    echo "  MLFLOW_TRACKING_PASSWORD=<set>"
+  fi
+  if [[ -n "${MLFLOW_REGISTER_MODEL:-}" ]]; then
+    echo "  MLFLOW_REGISTER_MODEL=${MLFLOW_REGISTER_MODEL}"
+  fi
+  if [[ -n "${MLFLOW_REGISTERED_MODEL_NAME:-}" ]]; then
+    echo "  MLFLOW_REGISTERED_MODEL_NAME=${MLFLOW_REGISTERED_MODEL_NAME}"
   fi
   echo "  DVC_S3_BUCKET=${DVC_S3_BUCKET}"
   echo
@@ -79,6 +122,18 @@ gh secret set MLFLOW_TRACKING_URI "${repo_args[@]}" --body "${MLFLOW_TRACKING_UR
 gh secret set DVC_S3_BUCKET "${repo_args[@]}" --body "${DVC_S3_BUCKET}"
 if [[ -n "${MLFLOW_EXPERIMENT_NAME:-}" ]]; then
   gh secret set MLFLOW_EXPERIMENT_NAME "${repo_args[@]}" --body "${MLFLOW_EXPERIMENT_NAME}"
+fi
+if [[ -n "${MLFLOW_TRACKING_USERNAME:-}" ]]; then
+  gh secret set MLFLOW_TRACKING_USERNAME "${repo_args[@]}" --body "${MLFLOW_TRACKING_USERNAME}"
+fi
+if [[ -n "${MLFLOW_TRACKING_PASSWORD:-}" ]]; then
+  gh secret set MLFLOW_TRACKING_PASSWORD "${repo_args[@]}" --body "${MLFLOW_TRACKING_PASSWORD}"
+fi
+if [[ -n "${MLFLOW_REGISTER_MODEL:-}" ]]; then
+  gh secret set MLFLOW_REGISTER_MODEL "${repo_args[@]}" --body "${MLFLOW_REGISTER_MODEL}"
+fi
+if [[ -n "${MLFLOW_REGISTERED_MODEL_NAME:-}" ]]; then
+  gh secret set MLFLOW_REGISTERED_MODEL_NAME "${repo_args[@]}" --body "${MLFLOW_REGISTERED_MODEL_NAME}"
 fi
 
 echo "GitHub Actions secrets configured for CI/CD (GitOps + Argo CD)."

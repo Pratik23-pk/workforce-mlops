@@ -15,7 +15,7 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 from workforce_mlops.config import DEFAULT_FEATURE_COLUMNS, TARGET_COLUMNS
 from workforce_mlops.data.preprocess import add_targets, split_by_time
-from workforce_mlops.mlflow_utils import get_configured_mlflow
+from workforce_mlops.mlflow_utils import get_configured_mlflow, log_repro_context
 
 TORCH_MODULE = None
 NN_MODULE = None
@@ -385,6 +385,7 @@ def run_model_comparison(
                 "stage": "compare_models",
             }
         )
+        log_repro_context(mlflow_client)
         mlflow_client.log_params(
             {
                 "input_path": str(resolved_input),

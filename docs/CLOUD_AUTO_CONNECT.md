@@ -72,3 +72,5 @@ Optional:
 - If provider cannot be detected, the script logs and continues.
 - If required DVC env vars are missing, DVC setup is skipped.
 - App startup is not blocked by auto-connect failures; errors are logged and app still starts.
+- When running interactively, optional choices (like DVC auto-pull) may prompt.
+  Disable prompts by setting `INTERACTIVE_PROMPTS=0`.

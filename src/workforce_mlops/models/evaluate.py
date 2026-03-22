@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import f1_score, mean_absolute_error, mean_squared_error, roc_auc_score
 
-from workforce_mlops.mlflow_utils import get_configured_mlflow
+from workforce_mlops.mlflow_utils import get_configured_mlflow, log_repro_context
 from workforce_mlops.models.predict import predict_df
 
 
@@ -69,6 +69,7 @@ def main() -> None:
 
     with mlflow.start_run(run_name="evaluate-production-model"):
         mlflow.set_tags({"project": "workforce-mlops", "stage": "evaluate"})
+        log_repro_context(mlflow)
         mlflow.log_params(
             {
                 "test_path": args.test_path,

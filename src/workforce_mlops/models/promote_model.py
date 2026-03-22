@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
 import shutil
 from datetime import datetime, timezone
 from pathlib import Path
@@ -12,7 +13,7 @@ import pandas as pd
 import yaml
 
 from workforce_mlops.config import TARGET_COLUMNS
-from workforce_mlops.mlflow_utils import get_configured_mlflow
+from workforce_mlops.mlflow_utils import get_configured_mlflow, log_repro_context
 
 
 def parse_args() -> argparse.Namespace:
@@ -274,6 +275,7 @@ def promote_best_model(
 
     with mlflow.start_run(run_name="promote-best-model"):
         mlflow.set_tags({"project": "workforce-mlops", "stage": "promote_model"})
+        log_repro_context(mlflow)
         mlflow.log_params(
             {
                 "selection_metric": policy["selection_metric"],
@@ -292,6 +294,24 @@ def promote_best_model(
                 mlflow.log_metric(f"selected_{column}", float(value))
         mlflow.log_artifact(str(promotion_path))
         mlflow.log_artifact(str(promoted_metadata_path))
+
+        if os.getenv("MLFLOW_REGISTER_MODEL", "0") == "1":
+            registered_name = os.getenv(
+                "MLFLOW_REGISTERED_MODEL_NAME",
+                "workforce-forecast-model",
+            )
+            from workforce_mlops.models.predict import load_model
+
+            promoted_metadata = json.loads(
+                promoted_metadata_path.read_text(encoding="utf-8")
+            )
+            model = load_model(output_root, promoted_metadata)
+            mlflow.pytorch.log_model(
+                model,
+                artifact_path="model",
+                registered_model_name=registered_name,
+            )
+            mlflow.set_tags({"registered_model_name": registered_name})
 
     return promo_report
 

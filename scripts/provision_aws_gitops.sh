@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -f "${SCRIPT_DIR}/prompt_utils.sh" ]]; then
+  # shellcheck disable=SC1091
+  source "${SCRIPT_DIR}/prompt_utils.sh"
+fi
+
 PROJECT_NAME="${PROJECT_NAME:-workforce-mlops}"
 AWS_REGION="${AWS_REGION:-us-east-1}"
 GITHUB_REPO="${GITHUB_REPO:-}"
@@ -38,6 +44,10 @@ bucket_name_valid() {
 if [[ "$MODE" != "cli" && "$MODE" != "console" ]]; then
   echo "Invalid MODE='${MODE}'. Use MODE=cli or MODE=console."
   exit 1
+fi
+
+if [[ -z "$GITHUB_REPO" ]] && command -v prompt_value >/dev/null 2>&1; then
+  prompt_value GITHUB_REPO "Enter GitHub repo (owner/name)"
 fi
 
 if [[ -z "$GITHUB_REPO" ]]; then
