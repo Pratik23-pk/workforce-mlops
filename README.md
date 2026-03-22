@@ -1,7 +1,6 @@
 # Workforce Intelligence MLOps
 
-[![CI](https://github.com/Pratik23-pk/workforce-mlops/actions/workflows/ci.yml/badge.svg)](https://github.com/Pratik23-pk/workforce-mlops/actions/workflows/ci.yml)
-[![CD](https://github.com/Pratik23-pk/workforce-mlops/actions/workflows/cd.yml/badge.svg)](https://github.com/Pratik23-pk/workforce-mlops/actions/workflows/cd.yml)
+CI/CD is handled via GitHub Actions (check the Actions tab for live status).
 
 Production-ready workforce forecasting platform with a modular FastAPI app, multi-head deep learning, and full MLOps automation (DVC + MLflow + CI/CD + GitOps).
 
