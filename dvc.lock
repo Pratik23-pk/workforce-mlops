@@ -119,7 +119,7 @@ stages:
     deps:
     - path: artifacts/model/metadata.json
       hash: md5
-      md5: 5842f94d6b28f91c4ef7402a2fccb27b
+      md5: ac38222dc7c1c62eefa40e09a5f744b9
       size: 979
     - path: artifacts/model/model.pt
       hash: md5
@@ -242,7 +242,7 @@ stages:
     outs:
     - path: artifacts/model/metadata.json
       hash: md5
-      md5: 5842f94d6b28f91c4ef7402a2fccb27b
+      md5: ac38222dc7c1c62eefa40e09a5f744b9
       size: 979
     - path: artifacts/model/model.pt
       hash: md5
