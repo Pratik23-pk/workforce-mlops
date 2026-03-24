@@ -27,8 +27,8 @@ stages:
       size: 41920
     - path: src/workforce_mlops/data/validate.py
       hash: md5
-      md5: 5cc42512f774efcc0e908cc51eb4e9e3
-      size: 1287
+      md5: e90586e7292765b51690a86645934dea
+      size: 2085
     outs:
     - path: reports/validation_report.json
       hash: md5
@@ -50,8 +50,8 @@ stages:
       size: 806
     - path: src/workforce_mlops/data/preprocess.py
       hash: md5
-      md5: e20e569b3f9a932f86c86055dd68dcf7
-      size: 2967
+      md5: 1042dbb4bb9c1ced348abe8ab2ca497b
+      size: 3863
     outs:
     - path: data/processed/test.csv
       hash: md5
@@ -85,16 +85,16 @@ stages:
       size: 806
     - path: src/workforce_mlops/mlflow_utils.py
       hash: md5
-      md5: cf1e2856a7c59deb31e11eb03698a42d
-      size: 781
+      md5: 3895b24f24a945201e645a097ab64b0e
+      size: 2297
     - path: src/workforce_mlops/models/multitask_model.py
       hash: md5
       md5: 69b7b82c2875ef601a2e1fbfe7c234d6
       size: 1223
     - path: src/workforce_mlops/models/train.py
       hash: md5
-      md5: 88b7e116c38162fcef10b1beccbb91bc
-      size: 10531
+      md5: 2e25341ef478d354f4cb6e44dc9214fc
+      size: 10584
     outs:
     - path: artifacts/baseline_model/metadata.json
       hash: md5
@@ -102,7 +102,7 @@ stages:
       size: 821
     - path: artifacts/baseline_model/model.pt
       hash: md5
-      md5: 73e4bcf5f60ffe849c56925327badba6
+      md5: f8068bc0bc392b1eadb33433cd583d76
       size: 56402
     - path: artifacts/baseline_model/preprocessor.joblib
       hash: md5
@@ -110,8 +110,8 @@ stages:
       size: 4047
     - path: reports/val_metrics.json
       hash: md5
-      md5: 88bd2fee8730b9833b29e25495f86bba
-      size: 276
+      md5: db05d26569f96b6c769c22d899f35d9f
+      size: 274
   evaluate:
     cmd: PYTHONPATH=src python -m workforce_mlops.models.evaluate --test-path 
       data/processed/test.csv --artifact-dir artifacts/model --report-path 
@@ -119,11 +119,11 @@ stages:
     deps:
     - path: artifacts/model/metadata.json
       hash: md5
-      md5: 51d8aa902a99effd2cc409fde574519c
+      md5: 5842f94d6b28f91c4ef7402a2fccb27b
       size: 979
     - path: artifacts/model/model.pt
       hash: md5
-      md5: 0c7ccf0c7e0ba8b564b0262f5e9436bb
+      md5: 95159372a758e71864550c26ad3fefcc
       size: 109930
     - path: artifacts/model/preprocessor.joblib
       hash: md5
@@ -135,16 +135,16 @@ stages:
       size: 2235
     - path: reports/model_promotion.json
       hash: md5
-      md5: e5115d7c74d02cee16d382ee76ce57c5
+      md5: f08ad2054a3fe9574d4a4806ab3e2bb3
       size: 1019
     - path: src/workforce_mlops/mlflow_utils.py
       hash: md5
-      md5: cf1e2856a7c59deb31e11eb03698a42d
-      size: 781
+      md5: 3895b24f24a945201e645a097ab64b0e
+      size: 2297
     - path: src/workforce_mlops/models/evaluate.py
       hash: md5
-      md5: 6ae2c8edfb46a24f165c4e30a2c76279
-      size: 3040
+      md5: 441b1f31101c0866a72c292af1840c0e
+      size: 3093
     - path: src/workforce_mlops/models/model_factory.py
       hash: md5
       md5: 34a8abb13778d2e85b51d0cb89dbff7e
@@ -156,8 +156,8 @@ stages:
     outs:
     - path: reports/test_metrics.json
       hash: md5
-      md5: c5135f5d54347edd5b870c6ee6dad0f7
-      size: 279
+      md5: d8ca45bdf90e26254d3bd94f54997a65
+      size: 281
   compare_models:
     cmd: OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=src python -m 
       workforce_mlops.models.compare_models --input-path 
@@ -175,16 +175,16 @@ stages:
       size: 806
     - path: src/workforce_mlops/data/preprocess.py
       hash: md5
-      md5: e20e569b3f9a932f86c86055dd68dcf7
-      size: 2967
+      md5: 1042dbb4bb9c1ced348abe8ab2ca497b
+      size: 3863
     - path: src/workforce_mlops/mlflow_utils.py
       hash: md5
-      md5: cf1e2856a7c59deb31e11eb03698a42d
-      size: 781
+      md5: 3895b24f24a945201e645a097ab64b0e
+      size: 2297
     - path: src/workforce_mlops/models/compare_models.py
       hash: md5
-      md5: 651a21cb3b32d26f6a82ed6c39d3b774
-      size: 15531
+      md5: 7a08b37f1ef7ff9901e60f92d53cc3a0
+      size: 15591
     - path: src/workforce_mlops/models/model_factory.py
       hash: md5
       md5: 34a8abb13778d2e85b51d0cb89dbff7e
@@ -196,16 +196,16 @@ stages:
     outs:
     - path: artifacts/experiments
       hash: md5
-      md5: ae124ea8477342e3d8c8808bffc4503b.dir
+      md5: 213456a6f20db131550bb2235ae5b586.dir
       size: 462882
       nfiles: 7
     - path: reports/model_comparison.csv
       hash: md5
-      md5: 2951c06b8a76ef8dcd441e436428f29c
-      size: 1066
+      md5: 235667e84f2557b2452dbdd2d6af4469
+      size: 1071
     - path: reports/model_comparison_summary.json
       hash: md5
-      md5: e74a4c78b81902f97c62596564662094
+      md5: 9d45461d44f8dd4068d31eb8a3d54299
       size: 550
   promote_model:
     cmd: PYTHONPATH=src python -m workforce_mlops.models.promote_model 
@@ -216,7 +216,7 @@ stages:
     deps:
     - path: artifacts/experiments
       hash: md5
-      md5: ae124ea8477342e3d8c8808bffc4503b.dir
+      md5: 213456a6f20db131550bb2235ae5b586.dir
       size: 462882
       nfiles: 7
     - path: params.yaml
@@ -225,28 +225,28 @@ stages:
       size: 806
     - path: reports/model_comparison.csv
       hash: md5
-      md5: 2951c06b8a76ef8dcd441e436428f29c
-      size: 1066
+      md5: 235667e84f2557b2452dbdd2d6af4469
+      size: 1071
     - path: reports/model_comparison_summary.json
       hash: md5
-      md5: e74a4c78b81902f97c62596564662094
+      md5: 9d45461d44f8dd4068d31eb8a3d54299
       size: 550
     - path: src/workforce_mlops/mlflow_utils.py
       hash: md5
-      md5: cf1e2856a7c59deb31e11eb03698a42d
-      size: 781
+      md5: 3895b24f24a945201e645a097ab64b0e
+      size: 2297
     - path: src/workforce_mlops/models/promote_model.py
       hash: md5
-      md5: 155c96b667ae20d9ebd458d4bb2f2e3b
-      size: 12368
+      md5: 18641ca4ab16b89c7e11e5083ec1a705
+      size: 13134
     outs:
     - path: artifacts/model/metadata.json
       hash: md5
-      md5: 51d8aa902a99effd2cc409fde574519c
+      md5: 5842f94d6b28f91c4ef7402a2fccb27b
       size: 979
     - path: artifacts/model/model.pt
       hash: md5
-      md5: 0c7ccf0c7e0ba8b564b0262f5e9436bb
+      md5: 95159372a758e71864550c26ad3fefcc
       size: 109930
     - path: artifacts/model/preprocessor.joblib
       hash: md5
@@ -254,5 +254,5 @@ stages:
       size: 4047
     - path: reports/model_promotion.json
       hash: md5
-      md5: e5115d7c74d02cee16d382ee76ce57c5
+      md5: f08ad2054a3fe9574d4a4806ab3e2bb3
       size: 1019
