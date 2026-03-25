@@ -8,7 +8,7 @@ if [[ -f "${SCRIPT_DIR}/prompt_utils.sh" ]]; then
 fi
 
 PROJECT_NAME="${PROJECT_NAME:-workforce-mlops}"
-AWS_REGION="${AWS_REGION:-us-east-1}"
+AWS_REGION="${AWS_REGION:-ap-south-1}"
 GITHUB_REPO="${GITHUB_REPO:-}"
 ECR_REPOSITORY="${ECR_REPOSITORY:-${PROJECT_NAME}-app}"
 DVC_S3_BUCKET="${DVC_S3_BUCKET:-}"

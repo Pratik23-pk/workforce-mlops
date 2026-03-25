@@ -17,7 +17,7 @@ spec:
       containers:
         - name: api
           image: workforce-mlops-app:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 8000
               name: http

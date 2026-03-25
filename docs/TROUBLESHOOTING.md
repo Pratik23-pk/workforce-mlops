@@ -81,7 +81,7 @@ aws sts get-caller-identity
 
 cd <repo-root>
 source .venv/bin/activate
-export AWS_REGION=us-east-1
+export AWS_REGION=ap-south-1
 export DVC_S3_BUCKET=<your-dvc-bucket>
 bash scripts/setup_dvc_s3.sh
 dvc push -v -j 1

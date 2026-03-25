@@ -30,7 +30,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: ap-south-1
 
       - name: Setup Python for DVC + CT
         uses: actions/setup-python@v5
@@ -48,13 +48,46 @@ jobs:
             echo "MLFLOW_TRACKING_URI=" >> "$GITHUB_ENV"
           fi
 
+      - name: Verify AWS credentials and S3 access
+        run: |
+          echo "=== Verifying AWS Setup ==="
+          aws sts get-caller-identity --region ap-south-1
+          echo "✓ AWS credentials valid"
+          
+          DVC_BUCKET="${{ secrets.DVC_S3_BUCKET }}"
+          if aws s3 ls "s3://${DVC_BUCKET}/" --region ap-south-1 >/dev/null 2>&1; then
+            echo "✓ S3 bucket accessible: ${DVC_BUCKET}"
+          else
+            echo "⚠ WARNING: S3 bucket not accessible. Ensure:"
+            echo "  - DVC_S3_BUCKET secret is set correctly: ${DVC_BUCKET}"
+            echo "  - IAM role has S3 permissions (s3:GetObject, s3:ListBucket)"
+            echo "  - Bucket exists in ap-south-1 region"
+          fi
+
       - name: Pull DVC artifacts
         run: |
           python -m pip install --upgrade pip
-          pip install "dvc[s3]==3.58.0" "pathspec==0.12.1"
-          dvc remote add -f origin "s3://${{ secrets.DVC_S3_BUCKET }}/dvc"
-          dvc remote modify origin region "${{ secrets.AWS_REGION }}"
-          dvc pull -v -j 1
+          pip install "dvc[s3]>=3.58.0" boto3
+          
+          echo "=== Setting up DVC remote ==="
+          DVC_BUCKET="${{ secrets.DVC_S3_BUCKET }}"
+          dvc remote add -f origin "s3://${DVC_BUCKET}/dvc"
+          dvc remote modify origin region "ap-south-1"
+          dvc remote modify origin use_ssl "true"
+          dvc remote list -v
+          
+          echo "=== Pulling DVC artifacts ==="
+          if dvc pull -v -j 1; then
+            echo "✓ DVC artifacts pulled successfully"
+          else
+            echo "⚠ DVC pull encountered issues:"
+            echo "  - Check AWS_ROLE_TO_ASSUME has S3:GetObject permission"
+            echo "  - Verify DVC_S3_BUCKET secret is set to: ${{ secrets.DVC_S3_BUCKET }}"
+            echo "  - Ensure bucket exists and is in ap-south-1"
+            echo ""
+            echo "  Proceeding with local artifacts if they exist..."
+            dvc status || true
+          fi
 
       - name: Install model/runtime dependencies
         run: |
@@ -94,8 +127,8 @@ jobs:
         run: |
           FILES_TO_COMMIT="deploy/k8s/overlays/prod/kustomization.yaml dvc.lock"
           if git diff --quiet -- ${FILES_TO_COMMIT}; then
-            echo "No manifest/model-lock changes to commit."
-            exit 0
+            echo "⚠️  No manifest/model-lock changes to commit. Check if DVC stages actually ran."
+            exit 1
           fi
 
           git config user.name "github-actions[bot]"

@@ -1,0 +1,65 @@
+# Version control
+.git/
+.gitignore
+
+# Python virtual environments
+.venv/
+.venv*/
+venv/
+env/
+*.egg-info/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# DVC internals (outputs are pulled into working tree by dvc pull; cache is a duplicate)
+.dvc/cache/
+.dvc/site-cache/
+
+# Training data — not needed for inference
+data/
+
+# Non-production model artifacts
+artifacts/baseline_model/
+artifacts/experiments/
+
+# Docs and experiments
+docs/
+experiments/
+*.ipynb
+.ipynb_checkpoints/
+
+# Infra provisioning scripts / outputs
+infra/
+
+# Local MLflow run data
+mlruns/
+
+# Test files
+tests/
+
+# Reports (generated during training, not needed at runtime)
+reports/
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+.Spotlight-V100
+.Trashes
+.vscode/
+.idea/
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# CI/CD workflows
+.github/
+
+# Logs and temp
+*.log
+*.tmp
+*.out
+*.err
