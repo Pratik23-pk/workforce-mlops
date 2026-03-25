@@ -1,2 +1,7 @@
 [core]
     site_cache_dir = .dvc/site-cache
+    remote = origin
+['remote "origin"']
+    url = s3://workforce-mlops-dvc-357457230342/dvc
+    region = ap-south-1
+    use_ssl = true

@@ -42,7 +42,10 @@ venv/
 mlruns/
 
 # Data and artifacts (managed by DVC, not Git)
-/data/raw/
+# Raw seed data committed directly (42 KB); future large files can use *.dvc
+/data/raw/*
+!/data/raw/workforce.csv
+!/data/raw/*.dvc
 /data/interim/
 /data/processed/
 /artifacts/
