@@ -7,4 +7,4 @@ resources:
 images:
   - name: workforce-mlops-app
     newName: 357457230342.dkr.ecr.ap-south-1.amazonaws.com/workforce-mlops-app
-    newTag: latest
+    newTag: 8c127ecb7bd810e589bc6477face8a11f34f0dea
